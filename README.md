@@ -12,7 +12,7 @@
 
 ---
 
-## ⚡ 2-Minute Overview
+## ⚡ Overview
 **CacheMesh** is an enterprise-grade in-memory key-value cache gateway and proxy modeled after high-concurrency systems like Redis, Memcached, and Groupcache. Designed to solve common production bottlenecks in microservice architectures, it delivers constant-time $O(1)$ LRU and LFU cache eviction, TTL expirations, pattern-based wildcard invalidations, and **Singleflight Promise Coalescing** to eliminate cache stampedes (thundering herds).
 
 ### Core Capabilities
@@ -181,4 +181,4 @@ Key architectural decisions are documented under [`docs/adr/`](./docs/adr/):
 ---
 
 ## 📄 License
-MIT License. Built for technical demonstration and high-scale production architectures.
+MIT License.
