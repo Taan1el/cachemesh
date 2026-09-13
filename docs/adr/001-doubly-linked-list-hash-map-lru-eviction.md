@@ -13,7 +13,7 @@ We implemented a textbook $O(1)$ Least Recently Used (LRU) eviction algorithm co
 
 ## Consequences
 ### Positive
-- Sub-microsecond execution time for both `get` and `set` operations ($<0.05\text{ms}$).
+- `get` and `set` run in constant time regardless of cache size: no scan, no array shift. Measured with `server/scripts/bench.ts` (100,000 operations against a warm 10,000-entry cache), both stayed in the range of roughly 1 to 5 microseconds per operation on the machine this repo was prepared on; run `npm run bench --workspace=server` to measure it on yours.
 - True $O(1)$ LRU eviction when capacity is reached, guaranteeing predictable latency.
 - Accurate tracking of access timestamps, hits, and byte sizes per node.
 

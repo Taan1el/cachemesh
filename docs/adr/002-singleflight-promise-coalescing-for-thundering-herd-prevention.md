@@ -15,7 +15,7 @@ We implemented the Singleflight request coalescing pattern (inspired by Go's `go
 
 ## Consequences
 ### Positive
-- Reduces origin database query spikes by 95% to 99% under concurrent loads.
+- N concurrent callers for the same cold key produce exactly 1 origin call instead of N; the other N-1 receive the same result once it resolves, without querying the origin themselves. Covered by the singleflight tests in `server/test` and reproducible live with the stampede simulator in the UI.
 - Coalesced requests receive identical results with zero redundant disk or network I/O.
 - Self-cleaning: registry cleans up synchronously in a `finally` block even when queries throw errors.
 

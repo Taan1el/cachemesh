@@ -163,7 +163,7 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
                 </button>
               </div>
               <span className="form-help">
-                If key is not in cache, gateway automatically retrieves from SQLite origin and caches it.
+                If the key is not in cache, it is retrieved from the origin store and cached.
               </span>
             </div>
 

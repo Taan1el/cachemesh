@@ -17,7 +17,7 @@ We implemented a constant-time $O(1)$ LFU algorithm using frequency bucketing:
 ### Positive
 - Strict $O(1)$ time complexity for both `get` and `set` operations under LFU.
 - Eliminates cache thrashing from one-off burst queries against unpopular keys.
-- Allows seamless live switching between LRU and LFU policies within the same gateway instance.
+- Supports switching between LRU and LFU at runtime: existing entries transfer to the new policy's structure instead of being dropped.
 
 ### Trade-offs
 - Requires auxiliary frequency bucket mappings, consuming slightly more heap memory than pure LRU.

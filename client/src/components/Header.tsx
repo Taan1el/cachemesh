@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ policy, keyCount, onRefresh, isL
             </span>
           </div>
           <p className="brand-subtitle">
-            High-Throughput Key-Value Cache Gateway & Singleflight Stampede Protection
+            In-memory key-value cache with LRU/LFU eviction and singleflight stampede protection
           </p>
         </div>
       </div>

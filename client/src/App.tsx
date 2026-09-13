@@ -94,14 +94,14 @@ export const App: React.FC = () => {
 
       <footer className="app-footer">
         <div>
-          <strong>CacheMesh</strong> &bull; Production Key-Value In-Memory Gateway &amp; Eviction Architecture
+          <strong>CacheMesh</strong> &bull; In-memory key-value cache with LRU/LFU eviction
         </div>
         <div className="footer-links">
-          <span>Node.js 24 Native SQLite WAL</span>
+          <a href="https://github.com/Taan1el/cachemesh" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
           <span>&bull;</span>
-          <span>Zero External Dependencies</span>
-          <span>&bull;</span>
-          <span>Sub-Millisecond Cache Hits</span>
+          <span>MIT License</span>
         </div>
       </footer>
     </div>
