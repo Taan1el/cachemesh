@@ -1,9 +1,20 @@
 {
   "name": "cachemesh",
   "version": "1.0.0",
-  "description": "High-Throughput Key-Value Cache Gateway, Eviction Engine & Singleflight Stampede Protection",
+  "description": "In-memory key-value cache gateway with LRU/LFU eviction and singleflight stampede protection",
   "private": true,
   "type": "module",
+  "homepage": "https://taan1el.github.io/cachemesh/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Taan1el/cachemesh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Taan1el/cachemesh/issues"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "workspaces": [
     "server",
     "client"
@@ -19,7 +30,8 @@
     "test:client": "npm run test --workspace=client",
     "lint": "npm run lint:server && npm run lint:client",
     "lint:server": "npm run lint --workspace=server",
-    "lint:client": "npm run lint --workspace=client"
+    "lint:client": "npm run lint --workspace=client",
+    "bench": "npm run bench --workspace=server"
   },
   "keywords": [
     "cache",
@@ -32,6 +44,6 @@
     "react19",
     "sqlite-wal"
   ],
-  "author": "Taaneiel",
+  "author": "Taaniel Vananurm",
   "license": "MIT"
 }

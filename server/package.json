@@ -1,9 +1,10 @@
 {
   "name": "@cachemesh/server",
   "version": "1.0.0",
-  "description": "CacheMesh In-Memory Key-Value Gateway, Eviction Engine & Singleflight Stampede Protection",
+  "description": "CacheMesh Express API: cache gateway, eviction engines and SQLite origin store",
   "private": true,
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
