@@ -1,7 +1,6 @@
-import type { CacheItemMetadata } from '../../../shared/types.js';
-import { estimateBytes, globToRegExp } from './lru.js';
+import type { CacheItemMetadata } from './types.js';
 
-interface LFUNode<T> {
+interface LRUNode<T> {
   key: string;
   value: T;
   sizeBytes: number;
@@ -10,18 +9,45 @@ interface LFUNode<T> {
   lastAccessedAt: number;
   expiresAt: number | null;
   frequency: number;
-  prev: LFUNode<T> | null;
-  next: LFUNode<T> | null;
+  prev: LRUNode<T> | null;
+  next: LRUNode<T> | null;
 }
 
-class DoublyLinkedList<T> {
-  head: LFUNode<T>;
-  tail: LFUNode<T>;
-  size = 0;
+export function estimateBytes(val: unknown): number {
+  try {
+    const str = typeof val === 'string' ? val : JSON.stringify(val);
+    return str ? str.length * 2 + 64 : 64; // rough UTF-16 bytes + object overhead
+  } catch {
+    return 128;
+  }
+}
 
-  constructor() {
+// Converts a glob pattern (`*` = any run of characters, `?` = one character)
+// into a RegExp, escaping every other regex metacharacter first. Without the
+// escaping step, a key like "v1.2.3" would treat "." as "match anything" and
+// a pattern containing "(" or "[" would throw instead of matching literally.
+export function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  const withWildcards = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
+  return new RegExp(`^${withWildcards}$`);
+}
+
+export class LRUCache<T = unknown> {
+  private capacity: number;
+  private items = new Map<string, LRUNode<T>>();
+  private head: LRUNode<T>; // Sentinel Head (Most Recently Used)
+  private tail: LRUNode<T>; // Sentinel Tail (Least Recently Used)
+  private totalMemoryBytes = 0;
+  private evictionCount = 0;
+  private expiredCount = 0;
+
+  constructor(capacity: number = 100) {
+    if (capacity <= 0) throw new Error('Capacity must be positive');
+    this.capacity = capacity;
+
+    // Sentinel nodes
     this.head = {
-      key: '__FREQ_HEAD__',
+      key: '__HEAD__',
       value: null as any,
       sizeBytes: 0,
       hits: 0,
@@ -33,7 +59,7 @@ class DoublyLinkedList<T> {
       next: null,
     };
     this.tail = {
-      key: '__FREQ_TAIL__',
+      key: '__TAIL__',
       value: null as any,
       sizeBytes: 0,
       hits: 0,
@@ -48,50 +74,6 @@ class DoublyLinkedList<T> {
     this.tail.prev = this.head;
   }
 
-  addFirst(node: LFUNode<T>): void {
-    node.prev = this.head;
-    node.next = this.head.next;
-    this.head.next!.prev = node;
-    this.head.next = node;
-    this.size++;
-  }
-
-  remove(node: LFUNode<T>): void {
-    if (node.prev) node.prev.next = node.next;
-    if (node.next) node.next.prev = node.prev;
-    node.prev = null;
-    node.next = null;
-    this.size--;
-  }
-
-  removeLast(): LFUNode<T> | null {
-    if (this.size === 0 || this.tail.prev === this.head || !this.tail.prev) {
-      return null;
-    }
-    const last = this.tail.prev;
-    this.remove(last);
-    return last;
-  }
-
-  isEmpty(): boolean {
-    return this.size === 0;
-  }
-}
-
-export class LFUCache<T = unknown> {
-  private capacity: number;
-  private items = new Map<string, LFUNode<T>>();
-  private freqBuckets = new Map<number, DoublyLinkedList<T>>();
-  private minFrequency = 0;
-  private totalMemoryBytes = 0;
-  private evictionCount = 0;
-  private expiredCount = 0;
-
-  constructor(capacity: number = 100) {
-    if (capacity <= 0) throw new Error('Capacity must be positive');
-    this.capacity = capacity;
-  }
-
   public getCapacity(): number {
     return this.capacity;
   }
@@ -101,7 +83,7 @@ export class LFUCache<T = unknown> {
     this.capacity = newCapacity;
     const evicted: CacheItemMetadata[] = [];
     while (this.items.size > this.capacity) {
-      const removed = this.evictMinFreq();
+      const removed = this.evictTail();
       if (removed) evicted.push(removed);
     }
     return evicted;
@@ -114,15 +96,20 @@ export class LFUCache<T = unknown> {
     }
 
     const now = Date.now();
+    // Check TTL expiration
     if (node.expiresAt !== null && now > node.expiresAt) {
-      this.delete(key);
+      this.removeNode(node);
+      this.items.delete(key);
+      this.totalMemoryBytes -= node.sizeBytes;
       this.expiredCount++;
       return { found: false };
     }
 
+    // Update node stats & move to MRU (head)
     node.hits++;
+    node.frequency++;
     node.lastAccessedAt = now;
-    this.incrementFrequency(node);
+    this.moveToHead(node);
 
     return {
       found: true,
@@ -145,19 +132,21 @@ export class LFUCache<T = unknown> {
       existing.sizeBytes = sizeBytes;
       existing.lastAccessedAt = now;
       existing.expiresAt = expiresAt;
+      existing.frequency++;
       this.totalMemoryBytes += sizeBytes;
-      this.incrementFrequency(existing);
+      this.moveToHead(existing);
       return {};
     }
 
+    // If at capacity, evict LRU (tail.prev)
     if (this.items.size >= this.capacity) {
-      const evicted = this.evictMinFreq();
+      const evicted = this.evictTail();
       if (evicted) {
         evictedMetadata = evicted;
       }
     }
 
-    const newNode: LFUNode<T> = {
+    const newNode: LRUNode<T> = {
       key,
       value,
       sizeBytes,
@@ -171,8 +160,7 @@ export class LFUCache<T = unknown> {
     };
 
     this.items.set(key, newNode);
-    this.getBucket(1).addFirst(newNode);
-    this.minFrequency = 1;
+    this.addToHead(newNode);
     this.totalMemoryBytes += sizeBytes;
 
     return { evicted: evictedMetadata };
@@ -181,15 +169,7 @@ export class LFUCache<T = unknown> {
   public delete(key: string): boolean {
     const node = this.items.get(key);
     if (!node) return false;
-
-    const bucket = this.freqBuckets.get(node.frequency);
-    if (bucket) {
-      bucket.remove(node);
-      if (bucket.isEmpty() && this.minFrequency === node.frequency) {
-        this.recalculateMinFrequency();
-      }
-    }
-
+    this.removeNode(node);
     this.items.delete(key);
     this.totalMemoryBytes -= node.sizeBytes;
     return true;
@@ -197,8 +177,8 @@ export class LFUCache<T = unknown> {
 
   public clear(): void {
     this.items.clear();
-    this.freqBuckets.clear();
-    this.minFrequency = 0;
+    this.head.next = this.tail;
+    this.tail.prev = this.head;
     this.totalMemoryBytes = 0;
   }
 
@@ -236,14 +216,15 @@ export class LFUCache<T = unknown> {
 
   public getAllEntries(): CacheItemMetadata[] {
     const results: CacheItemMetadata[] = [];
+    let curr = this.head.next;
     const now = Date.now();
-    for (const node of this.items.values()) {
-      if (node.expiresAt === null || now <= node.expiresAt) {
-        results.push(this.toMetadata(node));
+    while (curr && curr !== this.tail) {
+      if (curr.expiresAt === null || now <= curr.expiresAt) {
+        results.push(this.toMetadata(curr));
       }
+      curr = curr.next;
     }
-    // Sort descending by frequency, then ascending by lastAccessedAt
-    return results.sort((a, b) => b.frequency - a.frequency || a.lastAccessedAt - b.lastAccessedAt);
+    return results;
   }
 
   public sweepExpired(): number {
@@ -251,7 +232,9 @@ export class LFUCache<T = unknown> {
     let count = 0;
     for (const [key, node] of this.items.entries()) {
       if (node.expiresAt !== null && now > node.expiresAt) {
-        this.delete(key);
+        this.removeNode(node);
+        this.items.delete(key);
+        this.totalMemoryBytes -= node.sizeBytes;
         count++;
       }
     }
@@ -262,73 +245,51 @@ export class LFUCache<T = unknown> {
   public purgePattern(pattern: string): string[] {
     const regex = globToRegExp(pattern);
     const purgedKeys: string[] = [];
-    for (const key of this.items.keys()) {
+    for (const [key, node] of this.items.entries()) {
       if (regex.test(key)) {
-        this.delete(key);
+        this.removeNode(node);
+        this.items.delete(key);
+        this.totalMemoryBytes -= node.sizeBytes;
         purgedKeys.push(key);
       }
     }
     return purgedKeys;
   }
 
-  private incrementFrequency(node: LFUNode<T>): void {
-    const oldFreq = node.frequency;
-    const oldBucket = this.freqBuckets.get(oldFreq);
-    if (oldBucket) {
-      oldBucket.remove(node);
-      if (oldBucket.isEmpty() && this.minFrequency === oldFreq) {
-        this.minFrequency = oldFreq + 1;
-      }
-    }
+  // --- Linked List Operations ---
 
-    node.frequency = oldFreq + 1;
-    this.getBucket(node.frequency).addFirst(node);
+  private addToHead(node: LRUNode<T>): void {
+    node.prev = this.head;
+    node.next = this.head.next;
+    this.head.next!.prev = node;
+    this.head.next = node;
   }
 
-  private evictMinFreq(): CacheItemMetadata | undefined {
-    const minBucket = this.freqBuckets.get(this.minFrequency);
-    if (!minBucket || minBucket.isEmpty()) {
+  private removeNode(node: LRUNode<T>): void {
+    if (node.prev) node.prev.next = node.next;
+    if (node.next) node.next.prev = node.prev;
+    node.prev = null;
+    node.next = null;
+  }
+
+  private moveToHead(node: LRUNode<T>): void {
+    this.removeNode(node);
+    this.addToHead(node);
+  }
+
+  private evictTail(): CacheItemMetadata | undefined {
+    if (this.tail.prev === this.head || !this.tail.prev) {
       return undefined;
     }
-
-    const victim = minBucket.removeLast();
-    if (!victim) return undefined;
-
-    this.items.delete(victim.key);
-    this.totalMemoryBytes -= victim.sizeBytes;
+    const lruNode = this.tail.prev;
+    this.removeNode(lruNode);
+    this.items.delete(lruNode.key);
+    this.totalMemoryBytes -= lruNode.sizeBytes;
     this.evictionCount++;
-
-    if (minBucket.isEmpty()) {
-      this.recalculateMinFrequency();
-    }
-
-    return this.toMetadata(victim);
+    return this.toMetadata(lruNode);
   }
 
-  private recalculateMinFrequency(): void {
-    if (this.items.size === 0) {
-      this.minFrequency = 0;
-      return;
-    }
-    let min = Infinity;
-    for (const [freq, bucket] of this.freqBuckets.entries()) {
-      if (!bucket.isEmpty() && freq < min) {
-        min = freq;
-      }
-    }
-    this.minFrequency = min === Infinity ? 0 : min;
-  }
-
-  private getBucket(freq: number): DoublyLinkedList<T> {
-    let bucket = this.freqBuckets.get(freq);
-    if (!bucket) {
-      bucket = new DoublyLinkedList<T>();
-      this.freqBuckets.set(freq, bucket);
-    }
-    return bucket;
-  }
-
-  private toMetadata(node: LFUNode<T>): CacheItemMetadata {
+  private toMetadata(node: LRUNode<T>): CacheItemMetadata {
     return {
       key: node.key,
       value: node.value,

@@ -4,16 +4,17 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { OriginEntity } from '../../../shared/types.js';
 
-// Resolve relative to this file's own location (dist/db/origin.js -> ../../data)
-// instead of process.cwd(), so the database always lands at server/data/origin.db
-// regardless of the directory the process was started from.
+// Resolve relative to this file's own location instead of process.cwd(), so
+// the database always lands at server/data/origin.db regardless of the
+// directory the process was started from. Compiled location is
+// dist/server/src/db/origin.js -> ../../../../data
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export class OriginDatabase {
   private db: DatabaseSync;
 
   constructor(dbPath?: string) {
-    const finalPath = dbPath || path.resolve(__dirname, '../../data', 'origin.db');
+    const finalPath = dbPath || path.resolve(__dirname, '../../../../data', 'origin.db');
     const dir = path.dirname(finalPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

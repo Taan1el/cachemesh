@@ -10,7 +10,7 @@ services:
       - NODE_ENV=production
       - PORT=4002
     volumes:
-      - cachemesh-data:/app/data
+      - cachemesh-data:/app/server/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:4002/api/health').then(r => r.ok ? process.exit(0) : process.exit(1))"]

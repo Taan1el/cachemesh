@@ -21,8 +21,9 @@ export function createApp(cacheService?: CacheService) {
   // Mount API router
   app.use('/api', createApiRouter(service));
 
-  // Serve static client build if present (dist/app.js -> ../../client/dist)
-  const clientDistPath = path.resolve(__dirname, '../../client/dist');
+  // Serve static client build if present.
+  // Compiled location is dist/server/src/app.js -> ../../../../client/dist
+  const clientDistPath = path.resolve(__dirname, '../../../../client/dist');
   if (fs.existsSync(clientDistPath)) {
     app.use(express.static(clientDistPath));
     app.get('*', (_req, res) => {

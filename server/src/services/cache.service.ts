@@ -1,6 +1,6 @@
-import { LRUCache } from '../cache/lru.js';
-import { LFUCache } from '../cache/lfu.js';
-import { Singleflight } from '../cache/singleflight.js';
+import { LRUCache } from '../../../shared/lru.js';
+import { LFUCache } from '../../../shared/lfu.js';
+import { Singleflight } from '../../../shared/singleflight.js';
 import { OriginDatabase } from '../db/origin.js';
 import type {
   CacheConfig,

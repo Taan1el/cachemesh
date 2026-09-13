@@ -16,5 +16,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../shared/types.d.ts"]
+  "include": ["src", "../shared/types.ts"]
 }
