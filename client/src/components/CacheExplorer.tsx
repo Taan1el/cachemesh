@@ -52,6 +52,7 @@ export const CacheExplorer: React.FC<CacheExplorerProps> = ({ entries, onMutated
           <div className="explorer-actions">
             <input
               type="text"
+              aria-label="Filter cache keys"
               placeholder="Filter keys (e.g. user:, product:)..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}

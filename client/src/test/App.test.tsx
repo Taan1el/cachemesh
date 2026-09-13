@@ -126,4 +126,30 @@ describe('CacheMesh Dashboard', () => {
     await user.click(screen.getByText(/⚙️ Gateway Settings/i));
     expect(screen.getByText(/Max Capacity \(Items\)/i)).toBeInTheDocument();
   });
+
+  it('exposes accessible labels for the workbench form controls', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/🔍 GET Key/i)).toBeInTheDocument();
+    });
+
+    // Each field must resolve by its associated <label>, not just by placeholder text.
+    expect(screen.getByLabelText(/Key to Retrieve/i)).toBeInTheDocument();
+
+    await user.click(screen.getByText(/✍️ SET Key/i));
+    expect(screen.getByLabelText(/^Key$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Value \(JSON or Text\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/TTL \(seconds, 0 for indefinite\)/i)).toBeInTheDocument();
+
+    await user.click(screen.getByText(/🧹 Pattern Invalidation/i));
+    expect(screen.getByLabelText(/Wildcard Glob Pattern/i)).toBeInTheDocument();
+
+    await user.click(screen.getByText(/⚙️ Gateway Settings/i));
+    expect(screen.getByLabelText(/Max Capacity \(Items\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Default TTL \(Seconds\)/i)).toBeInTheDocument();
+
+    expect(screen.getByLabelText(/Filter cache keys/i)).toBeInTheDocument();
+  });
 });

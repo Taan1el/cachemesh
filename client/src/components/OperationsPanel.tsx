@@ -147,9 +147,10 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
         {activeTab === 'get' && (
           <form onSubmit={handleGet} className="ops-form">
             <div className="form-row">
-              <label className="form-label">Key to Retrieve</label>
+              <label className="form-label" htmlFor="get-key-input">Key to Retrieve</label>
               <div className="input-group">
                 <input
+                  id="get-key-input"
                   type="text"
                   value={getKey}
                   onChange={(e) => setGetKey(e.target.value)}
@@ -192,8 +193,9 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
         {activeTab === 'set' && (
           <form onSubmit={handleSet} className="ops-form">
             <div className="form-row">
-              <label className="form-label">Key</label>
+              <label className="form-label" htmlFor="set-key-input">Key</label>
               <input
+                id="set-key-input"
                 type="text"
                 value={setKeyInput}
                 onChange={(e) => setSetKeyInput(e.target.value)}
@@ -202,8 +204,9 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
               />
             </div>
             <div className="form-row">
-              <label className="form-label">Value (JSON or Text)</label>
+              <label className="form-label" htmlFor="set-value-input">Value (JSON or Text)</label>
               <textarea
+                id="set-value-input"
                 value={setValueInput}
                 onChange={(e) => setSetValueInput(e.target.value)}
                 className="input-textarea"
@@ -212,8 +215,9 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
               />
             </div>
             <div className="form-row">
-              <label className="form-label">TTL (seconds, 0 for indefinite)</label>
+              <label className="form-label" htmlFor="set-ttl-input">TTL (seconds, 0 for indefinite)</label>
               <input
+                id="set-ttl-input"
                 type="number"
                 value={setTtlInput}
                 onChange={(e) => setSetTtlInput(Number(e.target.value))}
@@ -232,9 +236,10 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
         {activeTab === 'purge' && (
           <form onSubmit={handlePurge} className="ops-form">
             <div className="form-row">
-              <label className="form-label">Wildcard Glob Pattern</label>
+              <label className="form-label" htmlFor="purge-pattern-input">Wildcard Glob Pattern</label>
               <div className="input-group">
                 <input
+                  id="purge-pattern-input"
                   type="text"
                   value={purgePatternInput}
                   onChange={(e) => setPurgePatternInput(e.target.value)}
@@ -268,8 +273,9 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
           <form onSubmit={handleUpdateConfig} className="ops-form">
             <div className="form-grid-2">
               <div className="form-row">
-                <label className="form-label">Max Capacity (Items)</label>
+                <label className="form-label" htmlFor="config-capacity-input">Max Capacity (Items)</label>
                 <input
+                  id="config-capacity-input"
                   type="number"
                   value={capacityInput}
                   onChange={(e) => setCapacityInput(Number(e.target.value))}
@@ -281,8 +287,9 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
               </div>
 
               <div className="form-row">
-                <label className="form-label">Default TTL (Seconds)</label>
+                <label className="form-label" htmlFor="config-ttl-input">Default TTL (Seconds)</label>
                 <input
+                  id="config-ttl-input"
                   type="number"
                   value={defaultTtlInput}
                   onChange={(e) => setDefaultTtlInput(Number(e.target.value))}

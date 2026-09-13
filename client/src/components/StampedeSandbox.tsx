@@ -49,8 +49,9 @@ export const StampedeSandbox: React.FC<StampedeSandboxProps> = ({ onSuccess }) =
 
       <div className="sandbox-controls-grid">
         <div className="control-group">
-          <label className="control-label">Target Entity Key</label>
+          <label className="control-label" htmlFor="sandbox-target-key">Target Entity Key</label>
           <select
+            id="sandbox-target-key"
             className="input-select"
             value={targetKey}
             onChange={(e) => setTargetKey(e.target.value)}
@@ -65,10 +66,11 @@ export const StampedeSandbox: React.FC<StampedeSandboxProps> = ({ onSuccess }) =
 
         <div className="control-group">
           <div className="slider-label-row">
-            <label className="control-label">Concurrent Requests</label>
+            <label className="control-label" htmlFor="sandbox-concurrency">Concurrent Requests</label>
             <span className="slider-value-badge">{concurrency} reqs</span>
           </div>
           <input
+            id="sandbox-concurrency"
             type="range"
             min="5"
             max="100"
@@ -82,10 +84,11 @@ export const StampedeSandbox: React.FC<StampedeSandboxProps> = ({ onSuccess }) =
 
         <div className="control-group">
           <div className="slider-label-row">
-            <label className="control-label">Simulated Origin Latency</label>
+            <label className="control-label" htmlFor="sandbox-delay">Simulated Origin Latency</label>
             <span className="slider-value-badge">{delayMs} ms</span>
           </div>
           <input
+            id="sandbox-delay"
             type="range"
             min="20"
             max="200"

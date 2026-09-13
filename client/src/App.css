@@ -8,7 +8,7 @@
 
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-muted: #828a99; /* meets WCAG AA (4.5:1) against both bg-primary and bg-card */
 
   --accent-blue: #3b82f6;
   --accent-cyan: #06b6d4;
@@ -395,6 +395,10 @@ body {
   border-color: var(--accent-blue);
 }
 
+.input-select:focus-visible, .input-text:focus-visible, .input-textarea:focus-visible {
+  box-shadow: 0 0 0 3px var(--border-glow);
+}
+
 .toggle-btn {
   width: 100%;
   padding: 0.6rem;
@@ -520,16 +524,18 @@ body {
 }
 
 .tab-btn {
-  padding: 0.75rem 0.5rem;
+  padding: 0.6rem 0.35rem;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: center;
 }
 
 .tab-btn:hover {
@@ -686,6 +692,10 @@ body {
 
 .search-input:focus {
   border-color: var(--accent-blue);
+}
+
+.search-input:focus-visible {
+  box-shadow: 0 0 0 3px var(--border-glow);
 }
 
 .entries-grid {
