@@ -16,17 +16,21 @@ import { CacheService } from '../../../shared/cache.service.js';
 import { BrowserOriginStore } from './browserOriginStore.js';
 
 const DEMO_CAPACITY = 50;
+const SWEEP_INTERVAL_MS = 30_000;
 
 let store = new BrowserOriginStore();
 let service = new CacheService(store, DEMO_CAPACITY);
+service.startExpirySweep(SWEEP_INTERVAL_MS);
 
 // Wipes the simulated origin catalog back to the seed data and starts a
 // fresh cache (clears entries, hit/miss counts and eviction stats), the
 // same way restarting the real server would.
 export function resetDemoData(): void {
+  service.stopExpirySweep();
   store = new BrowserOriginStore();
   store.reset();
   service = new CacheService(store, DEMO_CAPACITY);
+  service.startExpirySweep(SWEEP_INTERVAL_MS);
 }
 
 export async function fetchStats(): Promise<CacheStats> {

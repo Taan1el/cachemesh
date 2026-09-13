@@ -304,3 +304,24 @@ describe('CacheMesh API & Gateway Integration', () => {
     expect(res.body.data).toEqual({ capacity: 5, defaultTtlSeconds: 60, policy: 'LFU' });
   });
 });
+
+describe('CacheService background expiry sweep', () => {
+  it('removes an expired entry on its own, without a read ever touching it', async () => {
+    const service = new CacheService(new OriginDatabase(':memory:'), 10);
+    service.set('sweep:me', 'value', 1); // 1 second TTL
+    service.startExpirySweep(50); // sweep every 50ms for the test
+
+    try {
+      expect(service.getStats().keyCount).toBe(1);
+
+      // Wait past both the TTL and at least one sweep tick, without calling
+      // get()/has() on the key (that would trigger lazy expiry instead).
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      expect(service.getAllEntries()).toHaveLength(0);
+      expect(service.getStats().keyCount).toBe(0);
+    } finally {
+      service.stopExpirySweep();
+    }
+  });
+});

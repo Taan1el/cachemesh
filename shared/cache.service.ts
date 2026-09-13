@@ -27,12 +27,36 @@ export class CacheService {
   private coalescedHits = 0;
   private defaultTtlSeconds = 60; // 1 minute default
   private capacity = 50;
+  private sweepIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor(originDb: OriginStore, initialCapacity = 50) {
     this.capacity = initialCapacity;
     this.lruCache = new LRUCache(this.capacity);
     this.lfuCache = new LFUCache(this.capacity);
     this.originDb = originDb;
+  }
+
+  // Periodically evicts expired entries from both eviction structures, so a
+  // key nobody reads again still gets reclaimed instead of sitting in memory
+  // (and in keyCount/memoryBytes) until it happens to be touched or the
+  // cache fills up. get()/has() already expire lazily on access; this
+  // catches everything else. setInterval/clearInterval are standard in both
+  // Node and the browser, so this runs unchanged in the Pages demo.
+  public startExpirySweep(intervalMs = 30_000): void {
+    if (this.sweepIntervalId !== null) return;
+    this.sweepIntervalId = setInterval(() => {
+      this.lruCache.sweepExpired();
+      this.lfuCache.sweepExpired();
+    }, intervalMs);
+    // Node-only: don't let this timer keep the process alive. No-op in browsers.
+    (this.sweepIntervalId as unknown as { unref?: () => void }).unref?.();
+  }
+
+  public stopExpirySweep(): void {
+    if (this.sweepIntervalId !== null) {
+      clearInterval(this.sweepIntervalId);
+      this.sweepIntervalId = null;
+    }
   }
 
   private get activeCache(): LRUCache | LFUCache {
