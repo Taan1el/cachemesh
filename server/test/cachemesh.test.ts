@@ -219,6 +219,61 @@ describe('CacheMesh API & Gateway Integration', () => {
     expect(res.body.policy).toBe('LRU');
   });
 
+  it('GET /api/cache/stats and GET /api/cache/entries reflect a set item', async () => {
+    await request(app).post('/api/cache/item').send({ key: 'stats:probe', value: 42 });
+
+    const stats = await request(app).get('/api/cache/stats');
+    expect(stats.status).toBe(200);
+    expect(stats.body.data.keyCount).toBe(1);
+    expect(stats.body.data.activePolicy).toBe('LRU');
+
+    const entries = await request(app).get('/api/cache/entries');
+    expect(entries.status).toBe(200);
+    expect(entries.body.data).toHaveLength(1);
+    expect(entries.body.data[0].key).toBe('stats:probe');
+  });
+
+  it('DELETE /api/cache/item/:key removes an existing key and no-ops on a missing one', async () => {
+    await request(app).post('/api/cache/item').send({ key: 'to:delete', value: 1 });
+
+    const deleted = await request(app).delete('/api/cache/item/to:delete');
+    expect(deleted.status).toBe(200);
+    expect(deleted.body.data).toEqual({ key: 'to:delete', deleted: true });
+
+    const deletedAgain = await request(app).delete('/api/cache/item/to:delete');
+    expect(deletedAgain.status).toBe(200);
+    expect(deletedAgain.body.data).toEqual({ key: 'to:delete', deleted: false });
+  });
+
+  it('POST /api/cache/clear empties the cache', async () => {
+    await request(app).post('/api/cache/item').send({ key: 'a', value: 1 });
+    await request(app).post('/api/cache/item').send({ key: 'b', value: 2 });
+
+    const cleared = await request(app).post('/api/cache/clear');
+    expect(cleared.status).toBe(200);
+
+    const entries = await request(app).get('/api/cache/entries');
+    expect(entries.body.data).toHaveLength(0);
+  });
+
+  it('GET and POST /api/origin/entities read and write the origin catalog', async () => {
+    const initial = await request(app).get('/api/origin/entities');
+    expect(initial.status).toBe(200);
+    expect(initial.body.data.length).toBeGreaterThan(0);
+
+    const created = await request(app)
+      .post('/api/origin/entities')
+      .send({ id: 'user:999', category: 'users', name: 'New Entity', payload: { role: 'tester' } });
+    expect(created.status).toBe(200);
+    expect(created.body.data).toMatchObject({ id: 'user:999', category: 'users', name: 'New Entity' });
+
+    const afterCreate = await request(app).get('/api/origin/entities');
+    expect(afterCreate.body.data.some((e: { id: string }) => e.id === 'user:999')).toBe(true);
+
+    const invalid = await request(app).post('/api/origin/entities').send({ id: 'x' });
+    expect(invalid.status).toBe(400);
+  });
+
   it('GET /api/cache/item/:key cold miss then warm hit', async () => {
     // First request: Origin fetch
     const res1 = await request(app).get('/api/cache/item/user:101?delay=20');
