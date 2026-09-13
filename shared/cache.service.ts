@@ -1,7 +1,7 @@
-import { LRUCache } from '../../../shared/lru.js';
-import { LFUCache } from '../../../shared/lfu.js';
-import { Singleflight } from '../../../shared/singleflight.js';
-import { OriginDatabase } from '../db/origin.js';
+import { LRUCache } from './lru.js';
+import { LFUCache } from './lfu.js';
+import { Singleflight } from './singleflight.js';
+import type { OriginStore } from './origin-store.js';
 import type {
   CacheConfig,
   CacheItemMetadata,
@@ -10,14 +10,17 @@ import type {
   StampedeDemoRequest,
   StampedeDemoResult,
   InvalidationPatternResult,
-} from '../../../shared/types.js';
+} from './types.js';
 
+// Cache coordination logic shared between the Express gateway and the
+// in-browser GitHub Pages demo. It only ever talks to origin data through
+// the OriginStore interface, so it has no Node-only dependencies itself.
 export class CacheService {
   private lruCache: LRUCache;
   private lfuCache: LFUCache;
   private activePolicy: EvictionPolicy = 'LRU';
   private singleflight = new Singleflight();
-  private originDb: OriginDatabase;
+  private originDb: OriginStore;
 
   private hitCount = 0;
   private missCount = 0;
@@ -25,11 +28,11 @@ export class CacheService {
   private defaultTtlSeconds = 60; // 1 minute default
   private capacity = 50;
 
-  constructor(originDb?: OriginDatabase, initialCapacity = 50) {
+  constructor(originDb: OriginStore, initialCapacity = 50) {
     this.capacity = initialCapacity;
     this.lruCache = new LRUCache(this.capacity);
     this.lfuCache = new LFUCache(this.capacity);
-    this.originDb = originDb || new OriginDatabase();
+    this.originDb = originDb;
   }
 
   private get activeCache(): LRUCache | LFUCache {
@@ -123,7 +126,7 @@ export class CacheService {
 
   public async runStampedeDemo(req: StampedeDemoRequest): Promise<StampedeDemoResult> {
     const { key, concurrentRequests, simulatedOriginDelayMs = 90, useSingleflight = true } = req;
-    
+
     // Ensure key is invalidated first to simulate a cold miss / cache stampede scenario
     this.activeCache.delete(key);
     this.singleflight.resetCounts();

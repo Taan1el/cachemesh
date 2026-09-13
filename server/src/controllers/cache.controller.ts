@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { CacheService } from '../services/cache.service.js';
+import { CacheService } from '../../../shared/cache.service.js';
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CacheController } from '../controllers/cache.controller.js';
-import { CacheService } from '../services/cache.service.js';
+import { CacheService } from '../../../shared/cache.service.js';
 
 export function createApiRouter(cacheService: CacheService): Router {
   const router = Router();

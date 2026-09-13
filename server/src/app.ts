@@ -4,7 +4,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createApiRouter } from './routes/api.routes.js';
-import { CacheService } from './services/cache.service.js';
+import { CacheService } from '../../shared/cache.service.js';
+import { OriginDatabase } from './db/origin.js';
 
 // Resolve paths from this file's own location rather than process.cwd(), so
 // the server finds the client build the same way whether it is started from
@@ -13,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function createApp(cacheService?: CacheService) {
   const app = express();
-  const service = cacheService || new CacheService();
+  const service = cacheService || new CacheService(new OriginDatabase());
 
   app.use(cors());
   app.use(express.json());

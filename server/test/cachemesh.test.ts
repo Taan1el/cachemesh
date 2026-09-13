@@ -3,7 +3,7 @@ import request from 'supertest';
 import { LRUCache } from '../../shared/lru.js';
 import { LFUCache } from '../../shared/lfu.js';
 import { Singleflight } from '../../shared/singleflight.js';
-import { CacheService } from '../src/services/cache.service.js';
+import { CacheService } from '../../shared/cache.service.js';
 import { OriginDatabase } from '../src/db/origin.js';
 import { createApp } from '../src/app.js';
 

@@ -3,6 +3,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { OriginEntity } from '../../../shared/types.js';
+import type { OriginStore } from '../../../shared/origin-store.js';
+import { ORIGIN_SEED_ENTITIES } from '../../../shared/origin-seed.js';
 
 // Resolve relative to this file's own location instead of process.cwd(), so
 // the database always lands at server/data/origin.db regardless of the
@@ -10,7 +12,7 @@ import type { OriginEntity } from '../../../shared/types.js';
 // dist/server/src/db/origin.js -> ../../../../data
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export class OriginDatabase {
+export class OriginDatabase implements OriginStore {
   private db: DatabaseSync;
 
   constructor(dbPath?: string) {
@@ -44,46 +46,13 @@ export class OriginDatabase {
     const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM origin_entities');
     const result = countStmt.get() as { cnt: number };
     if (result.cnt === 0) {
-      const initial = [
-        {
-          id: 'user:101',
-          category: 'users',
-          name: 'Katrin Tamm',
-          payload: JSON.stringify({ role: 'Lead Architect', country: 'Estonia', tier: 'enterprise', activeSessions: 3 }),
-        },
-        {
-          id: 'product:pro-mesh',
-          category: 'products',
-          name: 'CacheMesh Pro Cluster',
-          payload: JSON.stringify({ priceEur: 499, concurrencyLimit: 50000, nodes: 4, sla: '99.99%' }),
-        },
-        {
-          id: 'pricing:eu-vat',
-          category: 'pricing',
-          name: 'EU Standard VAT Matrix',
-          payload: JSON.stringify({ EE: 0.22, DE: 0.19, FI: 0.255, SE: 0.25, currency: 'EUR' }),
-        },
-        {
-          id: 'inventory:warehouse-tallinn',
-          category: 'inventory',
-          name: 'Tallinn Logistics Center Stock',
-          payload: JSON.stringify({ skuCount: 4120, availableUnits: 98400, temperatureControlled: true }),
-        },
-        {
-          id: 'config:cluster-routing',
-          category: 'config',
-          name: 'Global Routing Topology',
-          payload: JSON.stringify({ primaryRegion: 'eu-north-1', failoverRegion: 'eu-central-1', maxRetries: 3 }),
-        }
-      ];
-
       const insertStmt = this.db.prepare(
         'INSERT INTO origin_entities (id, category, name, payload, updated_at) VALUES (?, ?, ?, ?, ?)'
       );
 
       const now = new Date().toISOString();
-      for (const item of initial) {
-        insertStmt.run(item.id, item.category, item.name, item.payload, now);
+      for (const item of ORIGIN_SEED_ENTITIES) {
+        insertStmt.run(item.id, item.category, item.name, JSON.stringify(item.payload), now);
       }
     }
   }
