@@ -1,13 +1,19 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import type { OriginEntity } from '../../../shared/types.js';
+
+// Resolve relative to this file's own location (dist/db/origin.js -> ../../data)
+// instead of process.cwd(), so the database always lands at server/data/origin.db
+// regardless of the directory the process was started from.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export class OriginDatabase {
   private db: DatabaseSync;
 
   constructor(dbPath?: string) {
-    const finalPath = dbPath || path.resolve(process.cwd(), 'data', 'origin.db');
+    const finalPath = dbPath || path.resolve(__dirname, '../../data', 'origin.db');
     const dir = path.dirname(finalPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

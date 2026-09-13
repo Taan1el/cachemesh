@@ -1,6 +1,9 @@
 node_modules
 dist
-data/*.db*
+server/data
+*.db
+*.db-*
+*.sqlite*
 coverage
 *.log
 .git
