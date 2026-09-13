@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { LRUCache } from '../../shared/lru.js';
 import { LFUCache } from '../../shared/lfu.js';
 import { Singleflight } from '../../shared/singleflight.js';
 import { CacheService } from '../../shared/cache.service.js';
 import { OriginDatabase } from '../src/db/origin.js';
 import { createApp } from '../src/app.js';
+import { findPackageDir } from '../src/lib/repoPaths.js';
 
 describe('LRUCache Engine', () => {
   let cache: LRUCache<string>;
@@ -378,5 +381,31 @@ describe('CacheService background expiry sweep', () => {
     } finally {
       service.stopExpirySweep();
     }
+  });
+});
+
+describe('findPackageDir', () => {
+  // This file's own directory is server/test/, three levels of nesting
+  // different from either app.ts (server/src/) or its compiled location
+  // (server/dist/server/src/). If findPackageDir ever regresses into
+  // assuming a fixed number of ".." segments again, resolving from a third,
+  // different depth here should expose it.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+
+  it('finds the server package directory by its package.json name', () => {
+    const serverDir = findPackageDir(here, '@cachemesh/server');
+    expect(path.basename(serverDir)).toBe('server');
+  });
+
+  it('finds the repo root directory by its package.json name', () => {
+    const rootDir = findPackageDir(here, 'cachemesh');
+    expect(path.basename(rootDir)).toBe('cachemesh');
+    // The repo root must be an ancestor of the server package directory.
+    const serverDir = findPackageDir(here, '@cachemesh/server');
+    expect(serverDir.startsWith(rootDir)).toBe(true);
+  });
+
+  it('throws instead of walking past the filesystem root forever', () => {
+    expect(() => findPackageDir(here, 'a-package-that-does-not-exist')).toThrow();
   });
 });

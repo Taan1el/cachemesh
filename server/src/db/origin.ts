@@ -5,18 +5,21 @@ import { fileURLToPath } from 'node:url';
 import type { OriginEntity } from '../../../shared/types.js';
 import type { OriginStore } from '../../../shared/origin-store.js';
 import { ORIGIN_SEED_ENTITIES } from '../../../shared/origin-seed.js';
+import { findPackageDir } from '../lib/repoPaths.js';
 
-// Resolve relative to this file's own location instead of process.cwd(), so
-// the database always lands at server/data/origin.db regardless of the
-// directory the process was started from. Compiled location is
-// dist/server/src/db/origin.js -> ../../../../data
+// Resolve against the server/ package directory itself (found by identity,
+// not a fixed relative depth; see repoPaths.ts for why) instead of
+// process.cwd(), so the database always lands at server/data/origin.db
+// regardless of the directory the process was started from, whether it is
+// running from source (tsx) or the compiled build.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serverDir = findPackageDir(__dirname, '@cachemesh/server');
 
 export class OriginDatabase implements OriginStore {
   private db: DatabaseSync;
 
   constructor(dbPath?: string) {
-    const finalPath = dbPath || path.resolve(__dirname, '../../../../data', 'origin.db');
+    const finalPath = dbPath || path.resolve(serverDir, 'data', 'origin.db');
     const dir = path.dirname(finalPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
