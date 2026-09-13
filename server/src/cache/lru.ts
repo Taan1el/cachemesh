@@ -22,6 +22,16 @@ export function estimateBytes(val: unknown): number {
   }
 }
 
+// Converts a glob pattern (`*` = any run of characters, `?` = one character)
+// into a RegExp, escaping every other regex metacharacter first. Without the
+// escaping step, a key like "v1.2.3" would treat "." as "match anything" and
+// a pattern containing "(" or "[" would throw instead of matching literally.
+export function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  const withWildcards = escaped.replace(/\*/g, '.*').replace(/\?/g, '.');
+  return new RegExp(`^${withWildcards}$`);
+}
+
 export class LRUCache<T = unknown> {
   private capacity: number;
   private items = new Map<string, LRUNode<T>>();
@@ -233,7 +243,7 @@ export class LRUCache<T = unknown> {
   }
 
   public purgePattern(pattern: string): string[] {
-    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
+    const regex = globToRegExp(pattern);
     const purgedKeys: string[] = [];
     for (const [key, node] of this.items.entries()) {
       if (regex.test(key)) {

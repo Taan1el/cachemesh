@@ -1,5 +1,5 @@
 import type { CacheItemMetadata } from '../../../shared/types.js';
-import { estimateBytes } from './lru.js';
+import { estimateBytes, globToRegExp } from './lru.js';
 
 interface LFUNode<T> {
   key: string;
@@ -260,7 +260,7 @@ export class LFUCache<T = unknown> {
   }
 
   public purgePattern(pattern: string): string[] {
-    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
+    const regex = globToRegExp(pattern);
     const purgedKeys: string[] = [];
     for (const key of this.items.keys()) {
       if (regex.test(key)) {

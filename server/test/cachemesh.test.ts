@@ -75,6 +75,25 @@ describe('LRUCache Engine', () => {
     expect(cache.has('user:2')).toBe(false);
     expect(cache.has('product:99')).toBe(true);
   });
+
+  it('treats regex metacharacters in glob patterns as literal text', () => {
+    cache.set('v1.2.3', 'exact');
+    cache.set('v1X2Y3', 'should not match');
+
+    // A naive `.` -> "any character" regex would purge both keys.
+    const purged = cache.purgePattern('v1.2.*');
+    expect(purged).toEqual(['v1.2.3']);
+    expect(cache.has('v1X2Y3')).toBe(true);
+  });
+
+  it('does not throw when a pattern contains unbalanced regex syntax', () => {
+    cache.set('user:(vip)', 'flagged');
+    let purged: string[] = [];
+    expect(() => {
+      purged = cache.purgePattern('user:(*');
+    }).not.toThrow();
+    expect(purged).toEqual(['user:(vip)']);
+  });
 });
 
 describe('LFUCache Engine', () => {
@@ -244,5 +263,44 @@ describe('CacheMesh API & Gateway Integration', () => {
 
     const checkA = await request(app).get('/api/cache/item/cache:a');
     expect(checkA.status).toBe(404);
+  });
+
+  it('POST /api/cache/purge with regex-special characters matches literally instead of erroring', async () => {
+    await request(app).post('/api/cache/item').send({ key: 'v1.2.3', value: 'exact' });
+    await request(app).post('/api/cache/item').send({ key: 'v1X2Y3', value: 'should survive' });
+
+    const purgeRes = await request(app).post('/api/cache/purge').send({ pattern: 'v1.2.*' });
+    expect(purgeRes.status).toBe(200);
+    expect(purgeRes.body.data.matchedKeys).toEqual(['v1.2.3']);
+
+    const stillThere = await request(app).get('/api/cache/item/v1X2Y3');
+    expect(stillThere.status).toBe(200);
+  });
+
+  it('rejects invalid input with 400 and never leaks internal error details', async () => {
+    const badTtl = await request(app).post('/api/cache/item').send({ key: 'k', value: 1, ttlSeconds: -5 });
+    expect(badTtl.status).toBe(400);
+    expect(badTtl.body.success).toBe(false);
+    expect(badTtl.body.error).not.toMatch(/at Object|node_modules|\.ts:\d|\.js:\d/);
+
+    const badKey = await request(app).post('/api/cache/item').send({ key: '   ', value: 1 });
+    expect(badKey.status).toBe(400);
+
+    const badPolicy = await request(app).post('/api/cache/config').send({ policy: 'MRU' });
+    expect(badPolicy.status).toBe(400);
+
+    const badCapacity = await request(app).post('/api/cache/config').send({ capacity: -10 });
+    expect(badCapacity.status).toBe(400);
+
+    const badConcurrency = await request(app)
+      .post('/api/cache/stampede-demo')
+      .send({ key: 'user:101', concurrentRequests: 'not-a-number' });
+    expect(badConcurrency.status).toBe(400);
+  });
+
+  it('POST /api/cache/config applies a valid capacity and policy change', async () => {
+    const res = await request(app).post('/api/cache/config').send({ capacity: 5, policy: 'LFU' });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ capacity: 5, defaultTtlSeconds: 60, policy: 'LFU' });
   });
 });
