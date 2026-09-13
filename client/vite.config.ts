@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // `npm run build:pages` builds with --mode pages: static assets are served from
@@ -7,6 +7,10 @@ import react from '@vitejs/plugin-react';
 // adapter instead of calling the Express API.
 export default defineConfig(({ mode }) => {
   const isPagesBuild = mode === 'pages';
+  // loadEnv reads .env / .env.local (see .env.example) and lets an actual
+  // shell environment variable of the same name override the file, which is
+  // what this config itself needs since it runs in Node, not the browser.
+  const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [react()],
@@ -18,8 +22,9 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          // Override with VITE_API_TARGET when the server runs on a non-default port.
-          target: process.env.VITE_API_TARGET || 'http://localhost:4002',
+          // Override with VITE_API_TARGET (env var or client/.env.local) when
+          // the server runs on a non-default port.
+          target: env.VITE_API_TARGET || 'http://localhost:4002',
           changeOrigin: true,
         },
       },
