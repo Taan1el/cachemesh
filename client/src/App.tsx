@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { CacheStats, CacheItemMetadata, CacheConfig } from '../../shared/types.js';
-import { fetchStats, fetchEntries } from './services/api.js';
+import { fetchStats, fetchEntries } from './services/index.js';
 import { Header } from './components/Header.js';
 import { StatsBar } from './components/StatsBar.js';
 import { StampedeSandbox } from './components/StampedeSandbox.js';
 import { CacheExplorer } from './components/CacheExplorer.js';
 import { OperationsPanel } from './components/OperationsPanel.js';
+import { DemoBanner } from './components/DemoBanner.js';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -49,6 +50,8 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      <DemoBanner onReset={() => loadData(true)} />
+
       <Header
         policy={stats?.activePolicy || 'LRU'}
         keyCount={stats?.keyCount || 0}

@@ -76,6 +76,10 @@ describe('CacheMesh Dashboard', () => {
 
     const policyBadges = screen.getAllByText(/Policy: LRU/i);
     expect(policyBadges.length).toBeGreaterThanOrEqual(1);
+
+    // This build talks to the real API (VITE_DEMO_MODE is unset in tests),
+    // so the demo mode banner must not render.
+    expect(screen.queryByText(/Demo mode:/i)).not.toBeInTheDocument();
   });
 
   it('renders the Stampede sandbox with controls and benchmark button', async () => {

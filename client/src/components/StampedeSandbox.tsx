@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { StampedeDemoResult } from '../../../shared/types.js';
-import { runStampedeDemo } from '../services/api.js';
+import { runStampedeDemo } from '../services/index.js';
 
 interface StampedeSandboxProps {
   onSuccess: () => void;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { CacheConfig, EvictionPolicy } from '../../../shared/types.js';
-import { getItem, setItem, purgePattern, updateConfig } from '../services/api.js';
+import { getItem, setItem, purgePattern, updateConfig } from '../services/index.js';
 
 interface OperationsPanelProps {
   config: CacheConfig | null;

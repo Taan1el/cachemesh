@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { CacheItemMetadata } from '../../../shared/types.js';
-import { deleteItem, clearAll } from '../services/api.js';
+import { deleteItem, clearAll } from '../services/index.js';
 
 interface CacheExplorerProps {
   entries: CacheItemMetadata[];
