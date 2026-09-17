@@ -15,7 +15,8 @@ export const StampedeSandbox: React.FC<StampedeSandboxProps> = ({ onSuccess }) =
   const [lastResult, setLastResult] = useState<StampedeDemoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRun = async () => {
+  const handleRun = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsRunning(true);
     setError(null);
     try {
@@ -35,150 +36,134 @@ export const StampedeSandbox: React.FC<StampedeSandboxProps> = ({ onSuccess }) =
   };
 
   return (
-    <div className="sandbox-panel">
-      <div className="sandbox-header">
-        <div className="sandbox-title-area">
-          <span className="sandbox-badge">Live System Benchmark</span>
-          <h2 className="sandbox-title">Cache Stampede & Thundering Herd Guard</h2>
-          <p className="sandbox-description">
-            Simulate <strong>N simultaneous requests</strong> hitting an uncached key. With <strong>Singleflight Promise Coalescing</strong>, 
-            concurrent requests share a single in-flight origin database query, eliminating database connection spikes.
-          </p>
-        </div>
-      </div>
+    <section aria-labelledby="stampede-heading">
+      <h2 id="stampede-heading" className="section-heading">Stampede test</h2>
+      <p className="section-description">
+        Send several concurrent requests for one cold key and compare origin calls with singleflight on and off.
+      </p>
 
-      <div className="sandbox-controls-grid">
-        <div className="control-group">
-          <label className="control-label" htmlFor="sandbox-target-key">Target Entity Key</label>
-          <select
-            id="sandbox-target-key"
-            className="input-select"
-            value={targetKey}
-            onChange={(e) => setTargetKey(e.target.value)}
-            disabled={isRunning}
-          >
-            <option value="product:pro-mesh">product:pro-mesh (Heavy catalog)</option>
-            <option value="user:101">user:101 (User profile)</option>
-            <option value="pricing:eu-vat">pricing:eu-vat (Tax matrix)</option>
-            <option value="inventory:warehouse-tallinn">inventory:warehouse-tallinn (Stock)</option>
-          </select>
-        </div>
-
-        <div className="control-group">
-          <div className="slider-label-row">
-            <label className="control-label" htmlFor="sandbox-concurrency">Concurrent Requests</label>
-            <span className="slider-value-badge">{concurrency} reqs</span>
-          </div>
-          <input
-            id="sandbox-concurrency"
-            type="range"
-            min="5"
-            max="100"
-            step="5"
-            value={concurrency}
-            onChange={(e) => setConcurrency(Number(e.target.value))}
-            className="slider-range"
-            disabled={isRunning}
-          />
-        </div>
-
-        <div className="control-group">
-          <div className="slider-label-row">
-            <label className="control-label" htmlFor="sandbox-delay">Simulated Origin Latency</label>
-            <span className="slider-value-badge">{delayMs} ms</span>
-          </div>
-          <input
-            id="sandbox-delay"
-            type="range"
-            min="20"
-            max="200"
-            step="10"
-            value={delayMs}
-            onChange={(e) => setDelayMs(Number(e.target.value))}
-            className="slider-range"
-            disabled={isRunning}
-          />
-        </div>
-
-        <div className="control-group switch-group">
-          <label className="control-label">Singleflight Protection</label>
-          <div className="toggle-switch-container">
-            <button
-              type="button"
-              className={`toggle-btn ${useSingleflight ? 'active' : ''}`}
-              onClick={() => setUseSingleflight(!useSingleflight)}
+      <div className="stampede-section">
+        <form className="stampede-form" onSubmit={handleRun}>
+          <div className="field">
+            <label className="field-label" htmlFor="sandbox-target-key">Target key</label>
+            <select
+              id="sandbox-target-key"
+              value={targetKey}
+              onChange={(e) => setTargetKey(e.target.value)}
               disabled={isRunning}
             >
-              {useSingleflight ? 'ENABLED (Coalescing Active)' : 'DISABLED (Direct Flood)'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="sandbox-action-row">
-        <button
-          className={`btn btn-primary btn-lg ${isRunning ? 'loading' : ''}`}
-          onClick={handleRun}
-          disabled={isRunning}
-        >
-          {isRunning ? (
-            <>
-              <span className="spinner"></span> Dispatching {concurrency} Concurrent Reqs...
-            </>
-          ) : (
-            <>🚀 Fire {concurrency} Concurrent Requests</>
-          )}
-        </button>
-
-        {error && <div className="alert alert-error">{error}</div>}
-      </div>
-
-      {lastResult && (
-        <div className="sandbox-results-card">
-          <div className="results-header">
-            <h3>Simulation Results for: <code>{lastResult.key}</code></h3>
-            <span className={`status-badge ${lastResult.useSingleflight ? 'badge-success' : 'badge-warning'}`}>
-              {lastResult.useSingleflight ? '✓ Protected by Singleflight' : '⚠️ Unprotected Raw Flood'}
-            </span>
+              <option value="product:pro-mesh">product:pro-mesh</option>
+              <option value="user:101">user:101</option>
+              <option value="pricing:eu-vat">pricing:eu-vat</option>
+              <option value="inventory:warehouse-tallinn">inventory:warehouse-tallinn</option>
+            </select>
           </div>
 
-          <div className="results-metrics-grid">
-            <div className="metric-box">
-              <span className="metric-title">Incoming Requests</span>
-              <span className="metric-val">{lastResult.concurrentRequests}</span>
-              <span className="metric-detail">Dispatched simultaneously</span>
+          <div className="field">
+            <div className="field-row">
+              <label className="field-label" htmlFor="sandbox-concurrency">Concurrent requests</label>
+              <span className="field-value">{concurrency}</span>
             </div>
+            <input
+              id="sandbox-concurrency"
+              type="range"
+              min="5"
+              max="100"
+              step="5"
+              value={concurrency}
+              onChange={(e) => setConcurrency(Number(e.target.value))}
+              disabled={isRunning}
+            />
+          </div>
 
-            <div className="metric-box highlight">
-              <span className="metric-title">Origin DB Invocations</span>
-              <span className={`metric-val ${lastResult.originCalls === 1 ? 'text-emerald' : 'text-amber'}`}>
-                {lastResult.originCalls}
+          <div className="field">
+            <div className="field-row">
+              <label className="field-label" htmlFor="sandbox-delay">Simulated origin latency</label>
+              <span className="field-value">{delayMs} ms</span>
+            </div>
+            <input
+              id="sandbox-delay"
+              type="range"
+              min="20"
+              max="200"
+              step="10"
+              value={delayMs}
+              onChange={(e) => setDelayMs(Number(e.target.value))}
+              disabled={isRunning}
+            />
+          </div>
+
+          <div className="checkbox-field">
+            <input
+              id="sandbox-singleflight"
+              type="checkbox"
+              checked={useSingleflight}
+              onChange={(e) => setUseSingleflight(e.target.checked)}
+              disabled={isRunning}
+            />
+            <label htmlFor="sandbox-singleflight">Coalesce requests (singleflight)</label>
+          </div>
+
+          <button className="btn btn-primary" type="submit" disabled={isRunning}>
+            {isRunning ? (
+              <>
+                <span className="spinner"></span> Sending {concurrency} requests
+              </>
+            ) : (
+              <>Send {concurrency} requests</>
+            )}
+          </button>
+
+          {error && <div className="alert alert-error">{error}</div>}
+        </form>
+
+        {lastResult ? (
+          <div className="result-panel">
+            <div className="result-panel-header">
+              <h3>Result for <code>{lastResult.key}</code></h3>
+              <span className="badge">
+                <span className={`status-dot ${lastResult.useSingleflight ? 'ok' : 'warn'}`}></span>
+                {lastResult.useSingleflight ? 'Coalesced' : 'Not coalesced'}
               </span>
-              <span className="metric-detail">
-                {lastResult.originCalls === 1 ? 'Single shared query executed' : 'Uncoalesced direct DB queries'}
-              </span>
             </div>
 
-            <div className="metric-box">
-              <span className="metric-title">Coalesced Requests</span>
-              <span className="metric-val text-cyan">{lastResult.coalescedHits}</span>
-              <span className="metric-detail">Reused in-flight promise</span>
-            </div>
+            <dl className="result-list">
+              <div>
+                <dt>Requests sent</dt>
+                <dd>{lastResult.concurrentRequests}</dd>
+              </div>
 
-            <div className="metric-box">
-              <span className="metric-title">Total Duration</span>
-              <span className="metric-val">{lastResult.totalDurationMs} ms</span>
-              <span className="metric-detail">Avg: {lastResult.averageLatencyMs} ms</span>
-            </div>
+              <div>
+                <dt>Origin calls</dt>
+                <dd>
+                  {lastResult.originCalls}
+                  <small>{lastResult.originCalls === 1 ? 'one shared query' : 'one call per request'}</small>
+                </dd>
+              </div>
 
-            <div className="metric-box highlight-emerald">
-              <span className="metric-title">Origin Load Reduction</span>
-              <span className="metric-val text-emerald">{lastResult.savingsPercent}%</span>
-              <span className="metric-detail">Database query reduction</span>
-            </div>
+              <div>
+                <dt>Coalesced requests</dt>
+                <dd>{lastResult.coalescedHits}</dd>
+              </div>
+
+              <div>
+                <dt>Total duration</dt>
+                <dd>
+                  {lastResult.totalDurationMs} ms
+                  <small>avg {lastResult.averageLatencyMs} ms</small>
+                </dd>
+              </div>
+
+              <div>
+                <dt>Origin load reduction</dt>
+                <dd>{lastResult.savingsPercent}%</dd>
+              </div>
+            </dl>
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="result-empty">Send a batch of requests to see the origin call count.</div>
+        )}
+      </div>
+    </section>
   );
 };

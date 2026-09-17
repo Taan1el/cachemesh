@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Search, PenLine, Eraser, Settings } from 'lucide-react';
 import type { CacheConfig, EvictionPolicy } from '../../../shared/types.js';
 import { getItem, setItem, purgePattern, updateConfig } from '../services/index.js';
 
@@ -79,7 +80,7 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
         // use string if not json
       }
       await setItem(setKeyInput, parsedValue, setTtlInput);
-      setSetSuccess(`Key "${setKeyInput}" cached successfully.`);
+      setSetSuccess(`Key "${setKeyInput}" saved.`);
       onMutated();
     } catch (err: any) {
       alert(`Set failed: ${err.message}`);
@@ -107,7 +108,7 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
         defaultTtlSeconds: defaultTtlInput,
         policy: policyInput,
       });
-      setConfigSuccess('Configuration updated successfully.');
+      setConfigSuccess('Settings saved.');
       onMutated();
     } catch (err: any) {
       alert(`Update failed: ${err.message}`);
@@ -115,55 +116,66 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
   };
 
   return (
-    <div className="ops-card">
-      <div className="ops-tabs">
+    <div className="workbench">
+      <div className="workbench-tabs" role="tablist" aria-label="Workbench">
         <button
+          role="tab"
+          aria-selected={activeTab === 'get'}
           className={`tab-btn ${activeTab === 'get' ? 'active' : ''}`}
           onClick={() => setActiveTab('get')}
         >
-          🔍 GET Key
+          <Search size={16} aria-hidden="true" />
+          Get
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'set'}
           className={`tab-btn ${activeTab === 'set' ? 'active' : ''}`}
           onClick={() => setActiveTab('set')}
         >
-          ✍️ SET Key
+          <PenLine size={16} aria-hidden="true" />
+          Set
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'purge'}
           className={`tab-btn ${activeTab === 'purge' ? 'active' : ''}`}
           onClick={() => setActiveTab('purge')}
         >
-          🧹 Pattern Invalidation
+          <Eraser size={16} aria-hidden="true" />
+          Purge
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'config'}
           className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
           onClick={() => setActiveTab('config')}
         >
-          ⚙️ Gateway Settings
+          <Settings size={16} aria-hidden="true" />
+          Settings
         </button>
       </div>
 
-      <div className="ops-body">
+      <div className="workbench-body">
         {activeTab === 'get' && (
           <form onSubmit={handleGet} className="ops-form">
-            <div className="form-row">
-              <label className="form-label" htmlFor="get-key-input">Key to Retrieve</label>
+            <div className="field">
+              <label className="field-label" htmlFor="get-key-input">Key to retrieve</label>
               <div className="input-group">
                 <input
                   id="get-key-input"
                   type="text"
                   value={getKey}
                   onChange={(e) => setGetKey(e.target.value)}
-                  placeholder="e.g. user:101, product:pro-mesh"
-                  className="input-text"
+                  placeholder="e.g. user:101"
                   required
                 />
                 <button type="submit" className="btn btn-primary" disabled={getLoading}>
-                  {getLoading ? 'Evaluating...' : 'Fetch Key'}
+                  {getLoading ? 'Fetching' : 'Get key'}
                 </button>
               </div>
-              <span className="form-help">
-                If the key is not in cache, it is retrieved from the origin store and cached.
+              <span className="field-help">
+                If the key is not cached, it is read from the origin store and cached.
               </span>
             </div>
 
@@ -172,14 +184,13 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
             {getResult && (
               <div className="result-viewer">
                 <div className="result-tags">
-                  <span className={`badge ${getResult.source === 'cache' ? 'badge-success' : 'badge-origin'}`}>
-                    {getResult.source === 'cache' ? '⚡ CACHE HIT' : '💾 ORIGIN MISS'}
+                  <span className="badge">
+                    <span className={`status-dot ${getResult.source === 'cache' ? 'ok' : 'warn'}`}></span>
+                    {getResult.source === 'cache' ? 'Cache hit' : 'Origin miss'}
                   </span>
-                  <span className="badge badge-latency">
-                    Latency: {getResult.latencyMs} ms
-                  </span>
+                  <span className="badge">{getResult.latencyMs} ms</span>
                   {getResult.coalesced && (
-                    <span className="badge badge-coalesced">Singleflight Coalesced</span>
+                    <span className="badge">Coalesced</span>
                   )}
                 </div>
                 <pre className="result-json">
@@ -192,42 +203,39 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
 
         {activeTab === 'set' && (
           <form onSubmit={handleSet} className="ops-form">
-            <div className="form-row">
-              <label className="form-label" htmlFor="set-key-input">Key</label>
+            <div className="field">
+              <label className="field-label" htmlFor="set-key-input">Key</label>
               <input
                 id="set-key-input"
                 type="text"
                 value={setKeyInput}
                 onChange={(e) => setSetKeyInput(e.target.value)}
-                className="input-text"
                 required
               />
             </div>
-            <div className="form-row">
-              <label className="form-label" htmlFor="set-value-input">Value (JSON or Text)</label>
+            <div className="field">
+              <label className="field-label" htmlFor="set-value-input">Value (JSON or text)</label>
               <textarea
                 id="set-value-input"
                 value={setValueInput}
                 onChange={(e) => setSetValueInput(e.target.value)}
-                className="input-textarea"
                 rows={4}
                 required
               />
             </div>
-            <div className="form-row">
-              <label className="form-label" htmlFor="set-ttl-input">TTL (seconds, 0 for indefinite)</label>
+            <div className="field">
+              <label className="field-label" htmlFor="set-ttl-input">TTL (seconds, 0 for indefinite)</label>
               <input
                 id="set-ttl-input"
                 type="number"
                 value={setTtlInput}
                 onChange={(e) => setSetTtlInput(Number(e.target.value))}
-                className="input-text"
                 min="0"
                 max="86400"
               />
             </div>
             <button type="submit" className="btn btn-primary">
-              Save to Cache
+              Set key
             </button>
             {setSuccess && <div className="alert alert-success">{setSuccess}</div>}
           </form>
@@ -235,33 +243,32 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
 
         {activeTab === 'purge' && (
           <form onSubmit={handlePurge} className="ops-form">
-            <div className="form-row">
-              <label className="form-label" htmlFor="purge-pattern-input">Wildcard Glob Pattern</label>
+            <div className="field">
+              <label className="field-label" htmlFor="purge-pattern-input">Wildcard pattern</label>
               <div className="input-group">
                 <input
                   id="purge-pattern-input"
                   type="text"
                   value={purgePatternInput}
                   onChange={(e) => setPurgePatternInput(e.target.value)}
-                  placeholder="e.g. user:*, product:*"
-                  className="input-text"
+                  placeholder="e.g. user:*"
                   required
                 />
-                <button type="submit" className="btn btn-warning">
-                  Purge Pattern
+                <button type="submit" className="btn btn-primary">
+                  Purge pattern
                 </button>
               </div>
-              <span className="form-help">
-                Instantly purges all keys matching glob regex. Ideal for tenant or entity invalidations.
+              <span className="field-help">
+                Removes every key matching the pattern. Use for bulk invalidation, such as all keys for one tenant.
               </span>
             </div>
 
             {purgeResult && (
               <div className="alert alert-info">
-                Purged <strong>{purgeResult.purgedCount}</strong> keys matching pattern &ldquo;{purgeResult.pattern}&rdquo;.
+                Purged <strong>{purgeResult.purgedCount}</strong> keys matching &ldquo;{purgeResult.pattern}&rdquo;.
                 {purgeResult.matchedKeys.length > 0 && (
                   <div className="purged-list">
-                    Keys: {purgeResult.matchedKeys.join(', ')}
+                    {purgeResult.matchedKeys.join(', ')}
                   </div>
                 )}
               </div>
@@ -272,28 +279,26 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
         {activeTab === 'config' && (
           <form onSubmit={handleUpdateConfig} className="ops-form">
             <div className="form-grid-2">
-              <div className="form-row">
-                <label className="form-label" htmlFor="config-capacity-input">Max Capacity (Items)</label>
+              <div className="field">
+                <label className="field-label" htmlFor="config-capacity-input">Max capacity (items)</label>
                 <input
                   id="config-capacity-input"
                   type="number"
                   value={capacityInput}
                   onChange={(e) => setCapacityInput(Number(e.target.value))}
-                  className="input-text"
                   min="2"
                   max="1000"
                   required
                 />
               </div>
 
-              <div className="form-row">
-                <label className="form-label" htmlFor="config-ttl-input">Default TTL (Seconds)</label>
+              <div className="field">
+                <label className="field-label" htmlFor="config-ttl-input">Default TTL (seconds)</label>
                 <input
                   id="config-ttl-input"
                   type="number"
                   value={defaultTtlInput}
                   onChange={(e) => setDefaultTtlInput(Number(e.target.value))}
-                  className="input-text"
                   min="5"
                   max="86400"
                   required
@@ -301,10 +306,10 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
               </div>
             </div>
 
-            <div className="form-row">
-              <label className="form-label">Eviction Policy Algorithm</label>
-              <div className="policy-radio-group">
-                <label className={`policy-radio-card ${policyInput === 'LRU' ? 'selected' : ''}`}>
+            <div className="field">
+              <label className="field-label">Eviction policy</label>
+              <div className="policy-options">
+                <label className={`policy-option ${policyInput === 'LRU' ? 'selected' : ''}`}>
                   <input
                     type="radio"
                     name="policy"
@@ -313,12 +318,12 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
                     onChange={() => setPolicyInput('LRU')}
                   />
                   <div>
-                    <strong>LRU (Least Recently Used)</strong>
-                    <p>Evicts items that haven't been accessed for the longest time.</p>
+                    <strong>LRU (least recently used)</strong>
+                    <p>Evicts the key that has gone longest without a read.</p>
                   </div>
                 </label>
 
-                <label className={`policy-radio-card ${policyInput === 'LFU' ? 'selected' : ''}`}>
+                <label className={`policy-option ${policyInput === 'LFU' ? 'selected' : ''}`}>
                   <input
                     type="radio"
                     name="policy"
@@ -327,15 +332,15 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
                     onChange={() => setPolicyInput('LFU')}
                   />
                   <div>
-                    <strong>LFU (Least Frequently Used)</strong>
-                    <p>Evicts items with the lowest access frequency, ties broken by LRU.</p>
+                    <strong>LFU (least frequently used)</strong>
+                    <p>Evicts the key with the fewest reads, ties broken by LRU.</p>
                   </div>
                 </label>
               </div>
             </div>
 
             <button type="submit" className="btn btn-primary">
-              Apply Configuration
+              Save settings
             </button>
             {configSuccess && <div className="alert alert-success">{configSuccess}</div>}
           </form>
