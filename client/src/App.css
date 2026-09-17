@@ -4,6 +4,13 @@
   padding: 0;
 }
 
+:root {
+  /* The one horizontal inset shared by every full-width row (demo bar,
+     header, main content, footer) so their content always lines up on
+     the same left and right edges. */
+  --page-pad: 2rem;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -50,17 +57,21 @@ textarea {
 
 /* Demo bar */
 .demo-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  padding: 0.65rem 1.5rem;
   background-color: var(--surface);
   border-bottom: 1px solid var(--rule);
+}
+
+.demo-bar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-block: 0.65rem;
+  padding-inline: var(--page-pad);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
   color: var(--ink-2);
   font-size: 13px;
-  text-align: center;
 }
 
 .demo-bar-links {
@@ -81,13 +92,14 @@ textarea {
 
 /* Header */
 .app-header {
-  padding: 2rem 2rem 1.5rem;
   border-bottom: 1px solid var(--rule);
 }
 
 .header-inner {
   max-width: 1200px;
   margin: 0 auto;
+  padding-block: 2rem 1.5rem;
+  padding-inline: var(--page-pad);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -165,10 +177,11 @@ textarea {
 /* Main layout */
 .app-main {
   flex: 1;
-  padding: 3rem 2rem 4rem;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  padding-block: 3rem 4rem;
+  padding-inline: var(--page-pad);
   display: flex;
   flex-direction: column;
   gap: 3rem;
@@ -928,22 +941,15 @@ table.entries-table {
   color: var(--ink);
 }
 
-.global-alert {
-  max-width: 1200px;
-  margin: 0 auto;
-  width: calc(100% - 4rem);
-}
-
-@media (max-width: 640px) {
-  .global-alert {
-    width: 100%;
-  }
-}
-
 /* Footer */
 .app-footer {
   margin-top: auto;
-  padding: 1.5rem 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-block: 1.5rem;
+  padding-inline: var(--page-pad);
   border-top: 1px solid var(--rule);
   display: flex;
   justify-content: space-between;
@@ -952,10 +958,6 @@ table.entries-table {
   gap: 1rem;
   font-size: 13px;
   color: var(--ink-2);
-  max-width: 1200px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .footer-links {
@@ -965,16 +967,20 @@ table.entries-table {
 }
 
 @media (max-width: 640px) {
-  .app-header {
-    padding: 1.5rem 1.25rem 1.25rem;
+  :root {
+    --page-pad: 1.25rem;
+  }
+
+  .header-inner {
+    padding-block: 1.5rem 1.25rem;
   }
 
   .app-main {
-    padding: 2rem 1.25rem 3rem;
+    padding-block: 2rem 3rem;
   }
 
   .app-footer {
-    padding: 1.25rem;
+    padding-block: 1.25rem;
   }
 
   .brand-name {

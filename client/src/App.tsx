@@ -62,7 +62,7 @@ export const App: React.FC = () => {
 
       <main className="app-main">
         {error && (
-          <div className="alert alert-error global-alert">
+          <div className="alert alert-error">
             <span className="alert-message">
               <TriangleAlert size={16} aria-hidden="true" /> {error}
             </span>
