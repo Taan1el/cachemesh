@@ -82,15 +82,15 @@ describe('CacheMesh Dashboard', () => {
     expect(screen.queryByText(/Demo mode:/i)).not.toBeInTheDocument();
   });
 
-  it('renders the Stampede sandbox with controls and benchmark button', async () => {
+  it('renders the stampede test with controls and a send button', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Cache Stampede & Thundering Herd Guard/i)).toBeInTheDocument();
+      expect(screen.getByText(/Stampede test/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Fire 30 Concurrent Requests/i)).toBeInTheDocument();
-    expect(screen.getByText(/ENABLED \(Coalescing Active\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Send 30 requests/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Coalesce requests \(singleflight\)/i)).toBeChecked();
   });
 
   it('displays cached entries and supports filtering', async () => {
@@ -98,37 +98,37 @@ describe('CacheMesh Dashboard', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('user:101')).toBeInTheDocument();
-      expect(screen.getByText('product:pro-mesh')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'user:101' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'product:pro-mesh' })).toBeInTheDocument();
     });
 
     // Filter by 'user:'
     const searchInput = screen.getByPlaceholderText(/Filter keys/i);
     await user.type(searchInput, 'user:');
 
-    expect(screen.getByText('user:101')).toBeInTheDocument();
-    expect(screen.queryByText('product:pro-mesh')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'user:101' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'product:pro-mesh' })).not.toBeInTheDocument();
   });
 
-  it('switches between Operations tabs smoothly', async () => {
+  it('switches between workbench tabs smoothly', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(/🔍 GET Key/i)).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /get/i })).toBeInTheDocument();
     });
 
-    // Switch to SET Key tab
-    await user.click(screen.getByText(/✍️ SET Key/i));
-    expect(screen.getByText(/Save to Cache/i)).toBeInTheDocument();
+    // Switch to Set tab
+    await user.click(screen.getByRole('tab', { name: /^set$/i }));
+    expect(screen.getByText(/Set key/i)).toBeInTheDocument();
 
-    // Switch to Pattern Invalidation tab
-    await user.click(screen.getByText(/🧹 Pattern Invalidation/i));
-    expect(screen.getByText(/Purge Pattern/i)).toBeInTheDocument();
+    // Switch to Purge tab
+    await user.click(screen.getByRole('tab', { name: /purge/i }));
+    expect(screen.getByText(/Purge pattern/i)).toBeInTheDocument();
 
-    // Switch to Gateway Settings tab
-    await user.click(screen.getByText(/⚙️ Gateway Settings/i));
-    expect(screen.getByText(/Max Capacity \(Items\)/i)).toBeInTheDocument();
+    // Switch to Settings tab
+    await user.click(screen.getByRole('tab', { name: /settings/i }));
+    expect(screen.getByText(/Max capacity \(items\)/i)).toBeInTheDocument();
   });
 
   it('exposes accessible labels for the workbench form controls', async () => {
@@ -136,23 +136,23 @@ describe('CacheMesh Dashboard', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(/🔍 GET Key/i)).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /get/i })).toBeInTheDocument();
     });
 
     // Each field must resolve by its associated <label>, not just by placeholder text.
-    expect(screen.getByLabelText(/Key to Retrieve/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Key to retrieve/i)).toBeInTheDocument();
 
-    await user.click(screen.getByText(/✍️ SET Key/i));
+    await user.click(screen.getByRole('tab', { name: /^set$/i }));
     expect(screen.getByLabelText(/^Key$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Value \(JSON or Text\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Value \(JSON or text\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/TTL \(seconds, 0 for indefinite\)/i)).toBeInTheDocument();
 
-    await user.click(screen.getByText(/🧹 Pattern Invalidation/i));
-    expect(screen.getByLabelText(/Wildcard Glob Pattern/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /purge/i }));
+    expect(screen.getByLabelText(/Wildcard pattern/i)).toBeInTheDocument();
 
-    await user.click(screen.getByText(/⚙️ Gateway Settings/i));
-    expect(screen.getByLabelText(/Max Capacity \(Items\)/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Default TTL \(Seconds\)/i)).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /settings/i }));
+    expect(screen.getByLabelText(/Max capacity \(items\)/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Default TTL \(seconds\)/i)).toBeInTheDocument();
 
     expect(screen.getByLabelText(/Filter cache keys/i)).toBeInTheDocument();
   });
