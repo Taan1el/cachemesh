@@ -1,6 +1,7 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import type { EvictionPolicy } from '../../../shared/types.js';
+import { pluralize } from '../utils/pluralize.js';
 
 interface HeaderProps {
   policy: EvictionPolicy;
@@ -26,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ policy, keyCount, onRefresh, isL
 
         <div className="header-actions">
           <span className="key-count">
-            <strong>{keyCount}</strong> keys cached
+            <strong>{keyCount}</strong> {pluralize(keyCount, 'key')} cached
           </span>
           <button
             className="btn btn-secondary"

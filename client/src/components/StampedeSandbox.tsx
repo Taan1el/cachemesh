@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { StampedeDemoResult } from '../../../shared/types.js';
 import { runStampedeDemo } from '../services/index.js';
+import { pluralize } from '../utils/pluralize.js';
 
 interface StampedeSandboxProps {
   onSuccess: () => void;
@@ -107,10 +108,10 @@ export const StampedeSandbox: React.FC<StampedeSandboxProps> = ({ onSuccess }) =
           <button className="btn btn-primary" type="submit" disabled={isRunning}>
             {isRunning ? (
               <>
-                <span className="spinner"></span> Sending {concurrency} requests
+                <span className="spinner"></span> Sending {concurrency} {pluralize(concurrency, 'request')}
               </>
             ) : (
-              <>Send {concurrency} requests</>
+              <>Send {concurrency} {pluralize(concurrency, 'request')}</>
             )}
           </button>
 

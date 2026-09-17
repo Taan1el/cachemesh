@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CacheStats } from '../../../shared/types.js';
+import { pluralize } from '../utils/pluralize.js';
 
 interface StatsBarProps {
   stats: CacheStats | null;
@@ -19,7 +20,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({ stats }) => {
         <span className="stat-label">Hit rate</span>
         <span className="stat-value">{stats.hitRatio}%</span>
         <span className="stat-note">
-          {stats.hitCount} hits / {stats.missCount} misses
+          {stats.hitCount} {pluralize(stats.hitCount, 'hit')} / {stats.missCount} {pluralize(stats.missCount, 'miss', 'misses')}
         </span>
       </div>
 

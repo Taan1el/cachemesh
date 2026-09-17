@@ -156,4 +156,43 @@ describe('CacheMesh Dashboard', () => {
 
     expect(screen.getByLabelText(/Filter cache keys/i)).toBeInTheDocument();
   });
+
+  it('uses singular nouns when a count is exactly 1', async () => {
+    const singularStats: CacheStats = {
+      ...mockStats,
+      hitCount: 1,
+      missCount: 1,
+      keyCount: 1,
+    };
+
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/cache/stats')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: singularStats }),
+        });
+      }
+      if (url.includes('/cache/entries')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: [] }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ success: true, data: {} }),
+      });
+    });
+
+    render(<App />);
+
+    // The count and noun sit in separate text nodes (the count is inside a
+    // <strong>), so match on the element's full text content directly.
+    await waitFor(() => {
+      const keyCount = document.querySelector('.key-count');
+      expect(keyCount?.textContent?.replace(/\s+/g, ' ').trim()).toBe('1 key cached');
+    });
+
+    expect(screen.getByText(/^1 hit \/ 1 miss$/i)).toBeInTheDocument();
+  });
 });

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, PenLine, Eraser, Settings } from 'lucide-react';
 import type { CacheConfig, EvictionPolicy } from '../../../shared/types.js';
 import { getItem, setItem, purgePattern, updateConfig } from '../services/index.js';
+import { pluralize } from '../utils/pluralize.js';
 
 interface OperationsPanelProps {
   config: CacheConfig | null;
@@ -265,7 +266,7 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
 
             {purgeResult && (
               <div className="alert alert-info">
-                Purged <strong>{purgeResult.purgedCount}</strong> keys matching &ldquo;{purgeResult.pattern}&rdquo;.
+                Purged <strong>{purgeResult.purgedCount}</strong> {pluralize(purgeResult.purgedCount, 'key')} matching &ldquo;{purgeResult.pattern}&rdquo;.
                 {purgeResult.matchedKeys.length > 0 && (
                   <div className="purged-list">
                     {purgeResult.matchedKeys.join(', ')}
