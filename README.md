@@ -12,9 +12,11 @@ The demo runs entirely in your browser: the same cache and eviction code the ser
 
 ## Screenshot
 
-![Dashboard with stampede simulator results and telemetry](docs/screenshots/01-dashboard.png)
+![Dashboard with a stampede test result and the telemetry strip](docs/screenshots/01-dashboard.png)
 
-More screenshots: [workbench and cache explorer](docs/screenshots/02-workbench.png), [pattern purge](docs/screenshots/03-purge.png).
+More screenshots: [keys in cache and the get/set/purge/settings workbench](docs/screenshots/02-workbench.png), [a purge result](docs/screenshots/03-purge.png), [the dashboard at phone width](docs/screenshots/04-mobile.png).
+
+The interface is a light, single-column-on-mobile dashboard: a plain header with the product name and a one-sentence description, a stats strip with hit rate, request count, keys cached, memory and evictions, a two-column stampede test (controls on the left, results on the right), a table of cached keys, and a tabbed get/set/purge/settings workbench.
 
 ## Features
 
@@ -23,10 +25,10 @@ More screenshots: [workbench and cache explorer](docs/screenshots/02-workbench.p
 - **Wildcard pattern invalidation** (`user:*`, `product:*`) for bulk purges.
 - **Singleflight request coalescing**: when N concurrent requests miss the cache for the same key, exactly one origin call is made and the other N-1 share its result.
 - **Live telemetry**: hit ratio, memory estimate, capacity usage, and eviction/expiry counts, refreshed every 3 seconds.
-- **Stampede simulator**: fire a configurable number of concurrent requests at a key, with singleflight on or off, and see origin call count, coalesced count, and total duration.
-- **Key explorer**: filter active keys, watch TTL countdowns, inspect a stored value, delete a key, or clear the cache.
-- **GET/SET/purge/config workbench** for manual testing against the running cache.
-- **GitHub Pages demo mode**: no backend required; data is seeded and persisted in your browser's localStorage, with a "Reset demo data" control.
+- **Stampede test**: send a configurable number of concurrent requests at a key, with singleflight on or off, and see origin call count, coalesced count, and total duration.
+- **Key explorer**: filter cached keys in a table, watch TTL countdowns, inspect a stored value, delete a key, or clear the cache.
+- **Get/set/purge/settings workbench** for manual testing against the running cache.
+- **GitHub Pages demo mode**: no backend required; data is seeded and persisted in your browser's localStorage, with a "Reset sample data" control.
 
 ## Getting started
 
