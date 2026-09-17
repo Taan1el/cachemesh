@@ -1,4 +1,5 @@
 import React from 'react';
+import { RefreshCw } from 'lucide-react';
 import type { EvictionPolicy } from '../../../shared/types.js';
 
 interface HeaderProps {
@@ -11,38 +12,32 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ policy, keyCount, onRefresh, isLoading }) => {
   return (
     <header className="app-header">
-      <div className="header-brand">
-        <div className="brand-logo">
-          <span className="brand-icon">⚡</span>
-          <div className="pulse-ring"></div>
-        </div>
-        <div className="brand-titles">
-          <div className="brand-row">
-            <h1 className="brand-name">CacheMesh</h1>
-            <span className="badge badge-version">v1.0</span>
-            <span className={`badge badge-policy ${policy.toLowerCase()}`}>
-              Policy: {policy}
-            </span>
-          </div>
+      <div className="header-inner">
+        <div>
+          <h1 className="brand-name">CacheMesh</h1>
           <p className="brand-subtitle">
-            In-memory key-value cache with LRU/LFU eviction and singleflight stampede protection
+            In-memory cache gateway with LRU and LFU eviction, TTL expiry, and singleflight stampede protection.
           </p>
+          <div className="header-meta">
+            <span className="badge">v1.0</span>
+            <span className="badge">Policy: {policy}</span>
+          </div>
         </div>
-      </div>
 
-      <div className="header-actions">
-        <div className="live-pill">
-          <span className="live-dot"></span>
-          <span>{keyCount} keys active</span>
+        <div className="header-actions">
+          <span className="key-count">
+            <strong>{keyCount}</strong> keys cached
+          </span>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={onRefresh}
+            disabled={isLoading}
+            title="Manual refresh"
+          >
+            <RefreshCw size={16} aria-hidden="true" />
+            {isLoading ? 'Refreshing' : 'Refresh'}
+          </button>
         </div>
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={onRefresh}
-          disabled={isLoading}
-          title="Manual refresh"
-        >
-          {isLoading ? 'Refreshing...' : '↻ Refresh'}
-        </button>
       </div>
     </header>
   );

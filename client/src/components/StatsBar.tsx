@@ -7,85 +7,47 @@ interface StatsBarProps {
 
 export const StatsBar: React.FC<StatsBarProps> = ({ stats }) => {
   if (!stats) {
-    return <div className="stats-bar-skeleton">Loading telemetry...</div>;
+    return <div className="stats-strip-loading">Loading telemetry.</div>;
   }
 
-  const capacityUsage = stats.capacity > 0 ? ((stats.keyCount / stats.capacity) * 100).toFixed(0) : '0';
+  const capacityPercent = stats.capacity > 0 ? Math.min(100, (stats.keyCount / stats.capacity) * 100) : 0;
   const memoryKb = (stats.memoryBytes / 1024).toFixed(1);
 
   return (
-    <div className="stats-bar-grid">
-      <div className="stat-card stat-hit-ratio">
-        <div className="stat-header">
-          <span className="stat-label">Cache Hit Ratio</span>
-          <span className="stat-icon">🎯</span>
-        </div>
-        <div className="stat-value-large">
-          {stats.hitRatio}%
-        </div>
-        <div className="stat-progress-container">
-          <div
-            className="stat-progress-bar hit-progress"
-            style={{ width: `${Math.min(100, stats.hitRatio)}%` }}
-          ></div>
-        </div>
-        <div className="stat-subtext">
+    <div className="stats-strip">
+      <div className="stat-cell">
+        <span className="stat-label">Hit rate</span>
+        <span className="stat-value">{stats.hitRatio}%</span>
+        <span className="stat-note">
           {stats.hitCount} hits / {stats.missCount} misses
-        </div>
+        </span>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Total Requests</span>
-          <span className="stat-icon">📊</span>
-        </div>
-        <div className="stat-value">{stats.totalRequests.toLocaleString()}</div>
-        <div className="stat-subtext">
-          Throughput processed
-        </div>
+      <div className="stat-cell">
+        <span className="stat-label">Requests</span>
+        <span className="stat-value">{stats.totalRequests.toLocaleString()}</span>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Active Keys / Capacity</span>
-          <span className="stat-icon">💾</span>
-        </div>
-        <div className="stat-value">
+      <div className="stat-cell">
+        <span className="stat-label">Keys cached</span>
+        <span className="stat-value">
           {stats.keyCount} <span className="stat-dim">/ {stats.capacity}</span>
-        </div>
-        <div className="stat-progress-container">
-          <div
-            className="stat-progress-bar capacity-progress"
-            style={{ width: `${Math.min(100, Number(capacityUsage))}%` }}
-          ></div>
-        </div>
-        <div className="stat-subtext">
-          {capacityUsage}% memory capacity utilized
+        </span>
+        <div className="stat-meter" role="meter" aria-valuenow={stats.keyCount} aria-valuemin={0} aria-valuemax={stats.capacity} aria-label="Capacity used">
+          <div className="stat-meter-fill" style={{ width: `${capacityPercent}%` }}></div>
         </div>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Estimated Memory</span>
-          <span className="stat-icon">🧠</span>
-        </div>
-        <div className="stat-value">{memoryKb} <span className="stat-unit">KB</span></div>
-        <div className="stat-subtext">
-          Heap buffer allocation
-        </div>
+      <div className="stat-cell">
+        <span className="stat-label">Memory</span>
+        <span className="stat-value">{memoryKb} <span className="stat-dim">KB</span></span>
       </div>
 
-      <div className="stat-card">
-        <div className="stat-header">
-          <span className="stat-label">Evictions & Expirations</span>
-          <span className="stat-icon">🧹</span>
-        </div>
-        <div className="stat-value">
-          {stats.evictionCount} <span className="stat-dim">evict</span> / {stats.expiredCount} <span className="stat-dim">ttl</span>
-        </div>
-        <div className="stat-subtext">
-          Policy: <span className="policy-highlight">{stats.activePolicy}</span>
-        </div>
+      <div className="stat-cell">
+        <span className="stat-label">Evictions</span>
+        <span className="stat-value">
+          {stats.evictionCount} <span className="stat-dim">/ {stats.expiredCount} ttl</span>
+        </span>
       </div>
     </div>
   );

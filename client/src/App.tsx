@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import type { CacheStats, CacheItemMetadata, CacheConfig } from '../../shared/types.js';
 import { fetchStats, fetchEntries } from './services/index.js';
 import { Header } from './components/Header.js';
@@ -62,8 +63,10 @@ export const App: React.FC = () => {
       <main className="app-main">
         {error && (
           <div className="alert alert-error global-alert">
-            <span>⚠️ {error}</span>
-            <button className="btn btn-secondary btn-xs" onClick={() => loadData(true)}>
+            <span className="alert-message">
+              <TriangleAlert size={16} aria-hidden="true" /> {error}
+            </span>
+            <button className="btn btn-secondary btn-sm" onClick={() => loadData(true)}>
               Retry
             </button>
           </div>
@@ -75,33 +78,29 @@ export const App: React.FC = () => {
 
         <div className="main-content-split">
           <div className="split-left">
-            <OperationsPanel
-              config={config}
-              selectedKey={selectedKey}
-              onMutated={() => loadData(false)}
-            />
-          </div>
-
-          <div className="split-right">
             <CacheExplorer
               entries={entries}
               onMutated={() => loadData(false)}
               onSelectKey={(key) => setSelectedKey(key)}
             />
           </div>
+
+          <div className="split-right">
+            <OperationsPanel
+              config={config}
+              selectedKey={selectedKey}
+              onMutated={() => loadData(false)}
+            />
+          </div>
         </div>
       </main>
 
       <footer className="app-footer">
-        <div>
-          <strong>CacheMesh</strong> &bull; In-memory key-value cache with LRU/LFU eviction
-        </div>
+        <div>CacheMesh &bull; MIT License</div>
         <div className="footer-links">
           <a href="https://github.com/Taan1el/cachemesh" target="_blank" rel="noreferrer">
-            GitHub
+            Source on GitHub
           </a>
-          <span>&bull;</span>
-          <span>MIT License</span>
         </div>
       </footer>
     </div>

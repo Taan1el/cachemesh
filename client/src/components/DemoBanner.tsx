@@ -16,16 +16,16 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({ onReset }) => {
   };
 
   return (
-    <div className="demo-banner" role="status">
-      <span>
-        Demo mode: data is simulated in your browser and never leaves your device.{' '}
+    <div className="demo-bar" role="status">
+      <span>Demo: everything runs in your browser with sample data.</span>
+      <span className="demo-bar-links">
+        <button type="button" className="link-btn" onClick={handleReset}>
+          Reset sample data
+        </button>
         <a href="https://github.com/Taan1el/cachemesh" target="_blank" rel="noreferrer">
-          View source on GitHub
+          Source on GitHub
         </a>
       </span>
-      <button type="button" className="btn btn-secondary btn-xs" onClick={handleReset}>
-        Reset demo data
-      </button>
     </div>
   );
 };
