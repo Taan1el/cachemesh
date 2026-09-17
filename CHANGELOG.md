@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- Redesigned the dashboard: a light paper theme with one teal accent color, replacing the dark navy theme and its five neon accent colors.
+- Replaced every emoji icon and label with Lucide icons or plain text.
+- Self-hosted the Sora, Geist and Geist Mono fonts instead of the system font stack, with numbers set in mono everywhere.
+- Removed all gradients and drop shadows from the logo, buttons, stat cards and progress bars.
+- Replaced the two rows of identical stat cards with a single stats strip (hit rate, requests, keys cached, memory, evictions).
+- Rebuilt the stampede test as a two-column layout: controls in a form on the left, results as a definition list on the right.
+- Rebuilt the key explorer as a table (key, hits, size, TTL, actions) instead of a card grid.
+- Resized every button, input and table row so no control is shorter than 44px.
+- Rewrote the UI copy in plain terms ("Send 30 requests", "Stampede test", "Keys in cache") and removed promotional and jargon-heavy phrasing.
+
 ## [1.0.0] - 2026-09-13
 
 ### Added
