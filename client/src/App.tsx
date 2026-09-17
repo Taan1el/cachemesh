@@ -66,7 +66,7 @@ export const App: React.FC = () => {
             <span className="alert-message">
               <TriangleAlert size={16} aria-hidden="true" /> {error}
             </span>
-            <button className="btn btn-secondary btn-sm" onClick={() => loadData(true)}>
+            <button className="btn btn-secondary" onClick={() => loadData(true)}>
               Retry
             </button>
           </div>

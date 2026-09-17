@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ policy, keyCount, onRefresh, isL
             <strong>{keyCount}</strong> keys cached
           </span>
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-secondary"
             onClick={onRefresh}
             disabled={isLoading}
             title="Manual refresh"

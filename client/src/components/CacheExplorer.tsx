@@ -61,7 +61,7 @@ export const CacheExplorer: React.FC<CacheExplorerProps> = ({ entries, onMutated
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
-          <button className="btn btn-danger btn-sm" onClick={handleClearAll} disabled={entries.length === 0}>
+          <button className="btn btn-danger" onClick={handleClearAll} disabled={entries.length === 0}>
             Clear cache
           </button>
         </div>
