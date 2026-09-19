@@ -7,6 +7,7 @@ import { createApiRouter } from './routes/api.routes.js';
 import { CacheService } from '../../shared/cache.service.js';
 import { OriginDatabase } from './db/origin.js';
 import { findPackageDir } from './lib/repoPaths.js';
+import { normalizeApiKey, requireApiKeyForWrites } from './middleware/api-key.js';
 
 // Resolve against the repo root itself (found by identity, not a fixed
 // relative depth; see repoPaths.ts for why) instead of process.cwd(), so
@@ -16,15 +17,28 @@ import { findPackageDir } from './lib/repoPaths.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRootDir = findPackageDir(__dirname, 'cachemesh');
 
-export function createApp(cacheService?: CacheService) {
+export interface AppOptions {
+  /**
+   * Shared key required on every write request. Defaults to the
+   * CACHEMESH_API_KEY environment variable; blank means no key.
+   */
+  apiKey?: string;
+}
+
+export function createApp(cacheService?: CacheService, options?: AppOptions) {
   const app = express();
   const service = cacheService || new CacheService(new OriginDatabase());
+  const apiKey = normalizeApiKey(options ? options.apiKey : process.env.CACHEMESH_API_KEY);
 
   app.use(cors());
+
+  // The guard runs before body parsing so an unauthenticated write is
+  // rejected without its payload ever being read.
+  app.use('/api', requireApiKeyForWrites(apiKey));
   app.use(express.json());
 
   // Mount API router
-  app.use('/api', createApiRouter(service));
+  app.use('/api', createApiRouter(service, { writeAccess: apiKey ? 'api-key' : 'open' }));
 
   // Serve static client build if present.
   const clientDistPath = path.resolve(repoRootDir, 'client', 'dist');

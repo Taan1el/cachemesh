@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { CacheController } from '../controllers/cache.controller.js';
 import { CacheService } from '../../../shared/cache.service.js';
 
-export function createApiRouter(cacheService: CacheService): Router {
+export interface ApiRouterOptions {
+  /** 'api-key' when writes need the shared key, 'open' otherwise. */
+  writeAccess?: 'open' | 'api-key';
+}
+
+export function createApiRouter(cacheService: CacheService, options: ApiRouterOptions = {}): Router {
   const router = Router();
   const controller = new CacheController(cacheService);
 
@@ -12,6 +17,7 @@ export function createApiRouter(cacheService: CacheService): Router {
     res.json({
       status: 'ok',
       service: 'CacheMesh',
+      writeAccess: options.writeAccess ?? 'open',
       activeKeys: stats.keyCount,
       hitRatio: stats.hitRatio,
       policy: stats.activePolicy,

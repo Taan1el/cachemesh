@@ -210,7 +210,8 @@ describe('CacheMesh API & Gateway Integration', () => {
   beforeEach(() => {
     const originDb = new OriginDatabase(':memory:');
     service = new CacheService(originDb, 10);
-    const created = createApp(service);
+    // Pass options explicitly so a CACHEMESH_API_KEY in the shell cannot change the result.
+    const created = createApp(service, {});
     app = created.app;
   });
 
