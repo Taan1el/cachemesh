@@ -9,6 +9,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4002
+      # Empty means writes are open. Set it in your shell to require a key.
+      - CACHEMESH_API_KEY=${CACHEMESH_API_KEY:-}
     volumes:
       - cachemesh-data:/app/server/data
     restart: unless-stopped

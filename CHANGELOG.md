@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Optional API key for write requests. Set `CACHEMESH_API_KEY` and every request that changes state needs it as a bearer token or `X-API-Key` header; unauthenticated requests get `401`. Reads stay open, `/api/health` reports `writeAccess`, and with no key set nothing changes.
+- The dashboard shows a masked key field when the server requires a key, keeps the key in `sessionStorage` for the tab, and explains a `401` instead of showing "Unauthorized".
+
 ### Changed
 - Redesigned the dashboard: a light paper theme with one teal accent color, replacing the dark navy theme and its five neon accent colors.
 - Replaced every emoji icon and label with Lucide icons or plain text.

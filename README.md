@@ -50,11 +50,12 @@ npm run dev
 This starts the Express API on port 4002 and the Vite dev server on port 5173. Open **http://localhost:5173**.
 
 ### Environment variables
-Neither variable is required to run the defaults shown above.
+No variable is required to run the defaults shown above.
 
 | Variable | Used by | Default | Purpose |
 |---|---|---|---|
 | `PORT` | server | `4002` | Port the Express gateway listens on. See `server/.env.example`. |
+| `CACHEMESH_API_KEY` | server | unset | When set, every request that changes state needs this key (see [Authentication](#authentication)). Blank counts as unset. |
 | `VITE_API_TARGET` | client (dev only) | `http://localhost:4002` | Where the Vite dev server proxies `/api` requests, for when the server runs on a different port. See `client/.env.example`. |
 
 ## Scripts
@@ -138,7 +139,7 @@ All routes are mounted under `/api`. Errors are always `{ "success": false, "err
 
 | Method | Path | Body / query | Response data | Errors |
 |---|---|---|---|---|
-| GET | `/api/health` | - | `{ status, service, activeKeys, hitRatio, policy }` | - |
+| GET | `/api/health` | - | `{ status, service, writeAccess, activeKeys, hitRatio, policy }` (`writeAccess` is `"open"` or `"api-key"`) | - |
 | GET | `/api/cache/stats` | - | `CacheStats` | 500 |
 | GET | `/api/cache/entries` | - | `CacheItemMetadata[]` | 500 |
 | GET | `/api/cache/item/:key` | query `delay?`, `singleflight?` | value plus `source`, `coalesced`, `latencyMs`, `metadata` | 400 empty key or invalid `delay`, 404 not found, 500 |
@@ -153,11 +154,31 @@ All routes are mounted under `/api`. Errors are always `{ "success": false, "err
 
 Shapes (`CacheStats`, `CacheItemMetadata`, `CacheConfig`, `StampedeDemoResult`, `InvalidationPatternResult`, `OriginEntity`) are defined in `shared/types.ts`.
 
+### Authentication
+
+By default the API is open. Start the server with `CACHEMESH_API_KEY` set and every request that is not a `GET`, `HEAD` or `OPTIONS` (SET, DELETE, clear, purge, config, stampede demo, origin upserts) must carry the key, either as a bearer token or in an `X-API-Key` header:
+
+```bash
+CACHEMESH_API_KEY=change-me npm run dev
+# or, after npm run build:
+CACHEMESH_API_KEY=change-me node server/dist/server/src/index.js
+
+curl -X POST http://localhost:4002/api/cache/item \
+  -H "Authorization: Bearer change-me" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"user:1","value":{"name":"Ada"}}'
+```
+
+A missing or wrong key gets `401` with `{ "success": false, "error": "..." }` and a `WWW-Authenticate: Bearer` header, and the request body is never parsed. Keys are compared in constant time.
+
+Reads stay open so dashboards and health checks keep working, which includes `GET /api/cache/item/:key`: on a miss it loads the origin value into the cache. When the server reports `writeAccess: "api-key"`, the dashboard shows a masked key field and sends the key with each change; the key is kept in `sessionStorage` for that tab only. This is one shared key, not a user system, and it does not encrypt traffic, so put the server behind HTTPS before exposing it.
+
 ## Testing
 
 - **Cache engines** (`server/test`): LRU and LFU eviction order and tie-breaking, TTL expiry (lazy and via the background sweep), wildcard purge including regex-metacharacter keys, singleflight coalescing under concurrency.
 - **API** (`server/test`, via `supertest`): the happy path for every route, input validation (400s), the 404 path, and that error responses never leak internal detail.
-- **Client** (`client/src/test`, React Testing Library): dashboard rendering and polling, the stampede sandbox, tab switching, accessible labels on every workbench field.
+- **API key guard** (`server/test/api-key.test.ts`): open mode, blank key treated as unset, 401 for a missing, wrong, differently sized or wrong-scheme key on every write route, both header forms accepted, reads left open, CORS preflight answered without a key.
+- **Client** (`client/src/test`, React Testing Library): dashboard rendering and polling, the stampede sandbox, tab switching, accessible labels on every workbench field, the API key bar and the bearer header on writes.
 - **Demo adapter** (`client/src/test/demoApi.test.ts`): the seeded catalog, cold miss then warm hit, the not-found error message matching the real API, set/list/delete, purge, stampede coalescing, config validation, persistence across a new store instance, and reset.
 
 Run everything with `npm test` (or `npm run test:server` / `npm run test:client` separately).
@@ -168,7 +189,7 @@ Run everything with `npm test` (or `npm run test:server` / `npm run test:client`
 ```bash
 docker compose up --build
 ```
-Serves the built client and API together at **http://localhost:4002**. The image runs as the unprivileged `node` user. Docker was not available while preparing this repository, so the image is only verified by the `docker` job in CI (`docker build`); if `docker compose up` does not work for you, please open an issue.
+Serves the built client and API together at **http://localhost:4002**. To require a key for changes, export `CACHEMESH_API_KEY` before running (Compose passes it through). The image runs as the unprivileged `node` user. Docker was not available while preparing this repository, so the image is only verified by the `docker` job in CI (`docker build`); if `docker compose up` does not work for you, please open an issue.
 
 ### GitHub Pages
 `.github/workflows/pages.yml` runs `npm run build:pages` and publishes `client/dist` on every push to `main`. The deploy step is skipped while the repository is private and starts working once it is made public.
@@ -176,14 +197,14 @@ Serves the built client and API together at **http://localhost:4002**. The image
 ## Design notes and limitations
 
 - The cache is in-memory and local to one process: it is not shared across multiple server instances, and restarting the server clears it. Only the SQLite origin data persists.
-- There is no authentication on the API. Anyone who can reach it can read, write, purge, or reconfigure the cache. Do not expose this server to the public internet as-is.
+- Without `CACHEMESH_API_KEY` there is no authentication: anyone who can reach the API can write, purge, or reconfigure the cache. With it, reads are still open and there is a single shared key with no per-user permissions or rate limits. Do not expose this server to the public internet as-is.
 - Memory usage is an estimate based on serialized value length, not actual V8 heap usage.
 - The GitHub Pages demo stores its data in the browser's localStorage: it is per-browser, not shared between visitors, and can be cleared by the browser (private windows, storage limits) at any time.
 - This has not had a security review. Treat it as a demonstration of cache and stampede-protection techniques, not as a production cache in front of real traffic.
 
 ## Roadmap
 
-- Optional API key or basic auth for the mutating endpoints.
+- Rate limits on write requests.
 - Persist cache snapshots so a restart does not start cold.
 - An audit log of SET, DELETE, and purge operations.
 - Push updates over WebSocket/SSE instead of polling every 3 seconds.
