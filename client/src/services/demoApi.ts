@@ -11,6 +11,7 @@ import type {
   InvalidationPatternResult,
   CacheConfig,
   OriginEntity,
+  WriteAccess,
 } from '../../../shared/types.js';
 import { CacheService } from '../../../shared/cache.service.js';
 import { BrowserOriginStore } from './browserOriginStore.js';
@@ -25,6 +26,11 @@ service.startExpirySweep(SWEEP_INTERVAL_MS);
 // Wipes the simulated origin catalog back to the seed data and starts a
 // fresh cache (clears entries, hit/miss counts and eviction stats), the
 // same way restarting the real server would.
+// The demo has no server, so there is never a key to enter.
+export async function fetchWriteAccess(): Promise<WriteAccess> {
+  return 'open';
+}
+
 export function resetDemoData(): void {
   service.stopExpirySweep();
   store = new BrowserOriginStore();

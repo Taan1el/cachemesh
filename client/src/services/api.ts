@@ -6,9 +6,37 @@ import type {
   InvalidationPatternResult,
   CacheConfig,
   OriginEntity,
+  WriteAccess,
 } from '../../../shared/types.js';
+import { getApiKey } from './apiKey.js';
 
 const API_BASE = '/api';
+
+// Headers for requests that change state. The key is only attached when the
+// user has entered one; an open server ignores the header.
+function writeHeaders(withJsonBody: boolean): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (withJsonBody) headers['Content-Type'] = 'application/json';
+  const key = getApiKey();
+  if (key) headers.Authorization = `Bearer ${key}`;
+  return headers;
+}
+
+// A 401 needs a different message from any other failure: the fix is on this
+// page (enter the key), not on the server.
+async function throwIfUnauthorized(res: Response): Promise<void> {
+  if (res.status !== 401) return;
+  const body = await res.json().catch(() => ({ error: '' }));
+  const reason = typeof body.error === 'string' && body.error ? body.error : 'Unauthorized.';
+  throw new Error(`${reason} Enter the key under "API key" at the top of the page.`);
+}
+
+export async function fetchWriteAccess(): Promise<WriteAccess> {
+  const res = await fetch(`${API_BASE}/health`);
+  if (!res.ok) return 'open';
+  const json = await res.json();
+  return json.writeAccess === 'api-key' ? 'api-key' : 'open';
+}
 
 export async function fetchStats(): Promise<CacheStats> {
   const res = await fetch(`${API_BASE}/cache/stats`);
@@ -50,9 +78,10 @@ export async function getItem(
 export async function setItem(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
   const res = await fetch(`${API_BASE}/cache/item`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: writeHeaders(true),
     body: JSON.stringify({ key, value, ttlSeconds }),
   });
+  await throwIfUnauthorized(res);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || `HTTP ${res.status}`);
@@ -62,21 +91,25 @@ export async function setItem(key: string, value: unknown, ttlSeconds?: number):
 export async function deleteItem(key: string): Promise<void> {
   const res = await fetch(`${API_BASE}/cache/item/${encodeURIComponent(key)}`, {
     method: 'DELETE',
+    headers: writeHeaders(false),
   });
+  await throwIfUnauthorized(res);
   if (!res.ok) throw new Error(`Failed to delete key: ${res.statusText}`);
 }
 
 export async function clearAll(): Promise<void> {
-  const res = await fetch(`${API_BASE}/cache/clear`, { method: 'POST' });
+  const res = await fetch(`${API_BASE}/cache/clear`, { method: 'POST', headers: writeHeaders(false) });
+  await throwIfUnauthorized(res);
   if (!res.ok) throw new Error(`Failed to clear cache: ${res.statusText}`);
 }
 
 export async function purgePattern(pattern: string): Promise<InvalidationPatternResult> {
   const res = await fetch(`${API_BASE}/cache/purge`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: writeHeaders(true),
     body: JSON.stringify({ pattern }),
   });
+  await throwIfUnauthorized(res);
   if (!res.ok) throw new Error(`Failed to purge pattern: ${res.statusText}`);
   const json = await res.json();
   return json.data;
@@ -85,9 +118,10 @@ export async function purgePattern(pattern: string): Promise<InvalidationPattern
 export async function runStampedeDemo(req: StampedeDemoRequest): Promise<StampedeDemoResult> {
   const res = await fetch(`${API_BASE}/cache/stampede-demo`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: writeHeaders(true),
     body: JSON.stringify(req),
   });
+  await throwIfUnauthorized(res);
   if (!res.ok) throw new Error(`Stampede simulation failed: ${res.statusText}`);
   const json = await res.json();
   return json.data;
@@ -96,9 +130,10 @@ export async function runStampedeDemo(req: StampedeDemoRequest): Promise<Stamped
 export async function updateConfig(config: Partial<CacheConfig>): Promise<CacheConfig> {
   const res = await fetch(`${API_BASE}/cache/config`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: writeHeaders(true),
     body: JSON.stringify(config),
   });
+  await throwIfUnauthorized(res);
   if (!res.ok) throw new Error(`Failed to update config: ${res.statusText}`);
   const json = await res.json();
   return json.data;

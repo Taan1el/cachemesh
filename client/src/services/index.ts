@@ -8,6 +8,7 @@ export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
 const impl = isDemoMode ? demoApi : realApi;
 
+export const fetchWriteAccess = impl.fetchWriteAccess;
 export const fetchStats = impl.fetchStats;
 export const fetchEntries = impl.fetchEntries;
 export const getItem = impl.getItem;
@@ -18,6 +19,8 @@ export const purgePattern = impl.purgePattern;
 export const runStampedeDemo = impl.runStampedeDemo;
 export const updateConfig = impl.updateConfig;
 export const fetchOriginEntities = impl.fetchOriginEntities;
+
+export { getApiKey, setApiKey, clearApiKey } from './apiKey.js';
 
 // Only meaningful in demo mode; the real API has no equivalent action a
 // browser client can trigger, so the demo banner is the only caller.

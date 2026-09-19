@@ -8,6 +8,7 @@ import { StampedeSandbox } from './components/StampedeSandbox.js';
 import { CacheExplorer } from './components/CacheExplorer.js';
 import { OperationsPanel } from './components/OperationsPanel.js';
 import { DemoBanner } from './components/DemoBanner.js';
+import { ApiKeyBar } from './components/ApiKeyBar.js';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -61,6 +62,8 @@ export const App: React.FC = () => {
       />
 
       <main className="app-main">
+        <ApiKeyBar />
+
         {error && (
           <div className="alert alert-error">
             <span className="alert-message">

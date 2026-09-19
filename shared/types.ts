@@ -1,5 +1,8 @@
 export type EvictionPolicy = 'LRU' | 'LFU';
 
+/** Whether the server needs its API key on write requests (reported by /api/health). */
+export type WriteAccess = 'open' | 'api-key';
+
 export interface CacheItemMetadata {
   key: string;
   value: unknown;
