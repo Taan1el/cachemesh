@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App.js';
 import { clearApiKey } from '../services/apiKey.js';
@@ -88,5 +88,47 @@ describe('accessibility checks', () => {
     const { container } = await openApp();
     await screen.findByLabelText('Key for changes');
     expect(await axe(container)).toHaveNoViolations();
+  });
+
+  describe('scrollable regions', () => {
+    const SCROLLERS = '.stats-strip, .table-wrapper, .value-preview, .result-json';
+
+    function expectReachable(container: HTMLElement, minimum: number) {
+      const found = container.querySelectorAll(SCROLLERS);
+      expect(found.length).toBeGreaterThanOrEqual(minimum);
+      found.forEach((el) => {
+        expect(el.getAttribute('role')).toBe('region');
+        expect(el.getAttribute('tabindex')).toBe('0');
+        expect((el.getAttribute('aria-label') ?? '').trim()).not.toBe('');
+      });
+    }
+
+    it('default view labels every scroll container', async () => {
+      const { container } = await openApp();
+      expectReachable(container, 2);
+    });
+
+    it('expanded entry labels the value preview', async () => {
+      const { user, container } = await openApp();
+      await user.click(screen.getByRole('button', { name: 'user:101' }));
+      expect(container.querySelector('.value-preview')).not.toBeNull();
+      expectReachable(container, 3);
+    });
+
+    it('fetched value labels the result block', async () => {
+      const { user, container } = await openApp();
+      await user.click(screen.getByRole('tab', { name: /^get$/i }));
+      await user.click(screen.getByRole('button', { name: /get key/i }));
+      await waitFor(() => expect(container.querySelector('.result-json')).not.toBeNull());
+      expect(container.querySelector('.result-json')).not.toBeNull();
+      expectReachable(container, 3);
+    });
+
+    it('stampede view labels every scroll container', async () => {
+      const { user, container } = await openApp();
+      await user.click(screen.getByRole('button', { name: /send 30 requests/i }));
+      await screen.findByText('Origin calls');
+      expectReachable(container, 2);
+    });
   });
 });
