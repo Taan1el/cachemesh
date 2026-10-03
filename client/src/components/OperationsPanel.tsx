@@ -194,7 +194,7 @@ export const OperationsPanel: React.FC<OperationsPanelProps> = ({ config, select
                     <span className="badge">Coalesced</span>
                   )}
                 </div>
-                <pre className="result-json">
+                <pre className="result-json" role="region" tabIndex={0} aria-label="Fetched value">
                   {JSON.stringify(getResult.data, null, 2)}
                 </pre>
               </div>

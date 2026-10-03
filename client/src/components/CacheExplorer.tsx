@@ -78,7 +78,7 @@ export const CacheExplorer: React.FC<CacheExplorerProps> = ({ entries, onMutated
           </p>
         </div>
       ) : (
-        <div className="table-wrapper">
+        <div className="table-wrapper" role="region" tabIndex={0} aria-label="Cached keys table">
           <table className="entries-table">
             <thead>
               <tr>
@@ -140,7 +140,7 @@ export const CacheExplorer: React.FC<CacheExplorerProps> = ({ entries, onMutated
                     {isExpanded && (
                       <tr className="value-row">
                         <td colSpan={5}>
-                          <pre className="value-preview">
+                          <pre className="value-preview" role="region" tabIndex={0} aria-label={`Value of ${entry.key}`}>
                             {typeof entry.value === 'object'
                               ? JSON.stringify(entry.value, null, 2)
                               : String(entry.value)}

@@ -15,7 +15,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({ stats }) => {
   const memoryKb = (stats.memoryBytes / 1024).toFixed(1);
 
   return (
-    <div className="stats-strip">
+    <div className="stats-strip" role="region" tabIndex={0} aria-label="Cache statistics">
       <div className="stat-cell">
         <span className="stat-label">Hit rate</span>
         <span className="stat-value">{stats.hitRatio}%</span>
