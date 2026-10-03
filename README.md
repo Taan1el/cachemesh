@@ -183,6 +183,8 @@ Reads stay open so dashboards and health checks keep working, which includes `GE
 
 Run everything with `npm test` (or `npm run test:server` / `npm run test:client` separately).
 
+The client suite includes automated accessibility checks (axe, WCAG 2 A and AA) for the main screens and states. Color contrast cannot be computed in jsdom, so it is checked outside the test suite.
+
 ## Deployment
 
 ### Docker

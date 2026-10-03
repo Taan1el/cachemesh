@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Automated accessibility tests that run the dashboard through axe (WCAG 2 A and AA) in the default view, every workbench tab, an expanded cache entry, a stampede result and the API key prompt. No violations were found, so no product changes were needed.
 - Optional API key for write requests. Set `CACHEMESH_API_KEY` and every request that changes state needs it as a bearer token or `X-API-Key` header; unauthenticated requests get `401`. Reads stay open, `/api/health` reports `writeAccess`, and with no key set nothing changes.
 - The dashboard shows a masked key field when the server requires a key, keeps the key in `sessionStorage` for the tab, and explains a `401` instead of showing "Unauthorized".
 
