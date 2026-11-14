@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { localFirstBuild } from './localBuild';
 
 // `npm run build:pages` builds with --mode pages: static assets are served from
 // /cachemesh/ on GitHub Pages, and the client switches to the in-browser demo
@@ -13,8 +14,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
-    plugins: [react()],
+    plugins: [react(), ...(isPagesBuild ? [localFirstBuild({ base: '/cachemesh/', name: 'CacheMesh', id: 'cachemesh', description: 'Local cache access log analysis', themeColor: '#faf9f6' })] : [])],
     base: isPagesBuild ? '/cachemesh/' : '/',
+    build: { assetsInlineLimit: 0 },
     define: {
       'import.meta.env.VITE_DEMO_MODE': JSON.stringify(isPagesBuild ? 'true' : 'false'),
     },
