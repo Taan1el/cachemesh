@@ -1,0 +1,1 @@
+{"version":1,"accesses":[{"key":"alpha","timeMs":0},{"key":"beta","timeMs":1000},{"key":"alpha","timeMs":2000}],"settings":{"sizes":[1,2],"ttlMs":1000,"targetHitRate":0.5}}
