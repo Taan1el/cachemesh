@@ -214,3 +214,23 @@ Serves the built client and API together at **http://localhost:4002**. To requir
 ## License
 
 MIT, see [LICENSE](LICENSE).
+
+## Use it with your own data
+
+Choose **Your workspace** on the published site, then **Import file**. This mode is an offline access-log analyzer, not a running cache gateway. Sample data and the existing gateway workbench remain separate; resetting the sample does not touch your saved log.
+
+Import a CSV with a `key` column and an optional `timestamp` column, or a text file containing one key per line. Timestamps are nonnegative integer milliseconds in nondecreasing order. Without timestamps, requests are assigned times one second apart. Input limits are 16 MiB and 100000 accesses. Keys are case-sensitive. The import dialog reports invalid files without replacing saved data. After validation, review the old and new access counts and explicitly confirm replacement. CSV keys preserve whitespace; line input trims keys and skips blank lines.
+
+Set up to 12 capacities (key counts, not bytes), a fixed TTL in milliseconds, and a target hit rate. Every run starts empty:
+
+- LRU evicts the least recently accessed resident key.
+- LFU counts accesses since insertion, breaking equal-frequency ties by recency.
+- TTL expires entries at insertion time plus the configured TTL; hits do not extend it. Expiry occurs at the boundary. When full, this policy evicts the oldest inserted resident key. LRU and LFU have no time expiry.
+
+The chart and table compare observed hit rates. The recommendation is the smallest tested capacity that meets your target, preferring the highest hit rate at that size. It is an estimate for this log, not a production sizing guarantee; object sizes, concurrency, origin latency, and changing traffic are not modeled.
+
+Export **Workspace JSON** to retain the log and settings, or **Results CSV** for the comparison table. A JSON backup can be imported in another browser. Large imports and replay computation use a worker. Data is saved in IndexedDB in this browser, without encryption. A stale tab cannot silently overwrite a newer saved revision; reload the saved workspace before retrying.
+
+The published build makes no requests to other hosts. It uses self-hosted fonts, a Pages-only Content Security Policy, an install manifest, and a versioned service-worker cache. A waiting update shows a Reload notice; activation is explicit so an update does not discard unsaved input. After the first successful online load, the working analyzer can reload and import files offline. The development/server build keeps its normal API behavior.
+
+Export a backup before clearing browser data or switching devices. Browser storage is not a backup, and the analyzer cannot recover a cleared workspace.

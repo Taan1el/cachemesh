@@ -1,6 +1,6 @@
 {
   "name": "@cachemesh/client",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CacheMesh React dashboard: stampede simulator, key explorer, and GET/SET/purge workbench",
   "private": true,
   "type": "module",
@@ -30,6 +30,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "axe-core": "^4.13.0",
+    "fake-indexeddb": "^6.2.8",
     "jsdom": "^26.0.0",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",

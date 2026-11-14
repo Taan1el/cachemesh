@@ -1,6 +1,6 @@
 {
   "name": "cachemesh",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "In-memory key-value cache gateway with LRU/LFU eviction and singleflight stampede protection",
   "private": true,
   "type": "module",
