@@ -78,7 +78,7 @@ describe('generated service worker', () => {
     const { respond, network } = boot('v1', { stored: { [`${CACHE}v1`]: [`${BASE}index.html`] } });
     await respond(BASE, { mode: 'navigate' });
     expect(network).toHaveBeenCalledTimes(1);
-    expect(network.mock.calls[0][1]).toMatchObject({ cache: 'no-cache' });
+    expect((network.mock.calls[0] as unknown[])[1]).toMatchObject({ cache: 'no-cache' });
   });
 
   it('serves built files from the cache without touching the network', async () => {
