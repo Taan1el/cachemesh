@@ -114,19 +114,20 @@ export function parseAccessLog(input: string, format: 'csv' | 'lines'): Access[]
   }
   const rows = parseCsvRows(input.replace(/^\uFEFF/u, ''));
   if (!rows.length) throw new Error('CSV is empty; expected headers key and optional timestamp.');
-  const headers = rows[0].map((header) => header.trim());
+  const headers = rows[0].map((header) => header.trim().toLowerCase());
   if (headers.some((h) => !h) || new Set(headers).size !== headers.length) throw new Error('CSV headers must be nonempty and unique.');
   if (headers.some((h) => h !== 'key' && h !== 'timestamp') || !headers.includes('key')) throw new Error('CSV headers must be key and optional timestamp.');
   if (headers.length > 2) throw new Error('CSV headers must be key and optional timestamp.');
   const keyIndex = headers.indexOf('key');
   const timeIndex = headers.indexOf('timestamp');
-  const dataRows = rows.slice(1).filter((r) => !(r.length === 1 && r[0] === ''));
+  // Keep each record's number from the file so an error points at the right row after blank lines.
+  const dataRows = rows.slice(1).map((fields, i) => ({ fields, number: i + 2 })).filter(({ fields }) => !(fields.length === 1 && fields[0] === ''));
   if (dataRows.length > MAX_ACCESSES) throw new Error('Access log must contain at most 100000 rows.');
-  const accesses = dataRows.map((r, i) => {
-    if (r.length !== headers.length) throw new Error(`CSV row ${i + 2} has ${r.length} fields; expected ${headers.length}.`);
-    const key = r[keyIndex];
-    const rawTime = timeIndex < 0 ? String((i + 1) * 1000) : r[timeIndex];
-    if (rawTime === '' || !/^\d+$/u.test(rawTime) || !Number.isSafeInteger(Number(rawTime))) throw new Error(`CSV row ${i + 2} timestamp must be a nonnegative safe integer in milliseconds.`);
+  const accesses = dataRows.map(({ fields, number }, i) => {
+    if (fields.length !== headers.length) throw new Error(`CSV row ${number} has ${fields.length} fields; expected ${headers.length}.`);
+    const key = fields[keyIndex];
+    const rawTime = timeIndex < 0 ? String((i + 1) * 1000) : fields[timeIndex].trim();
+    if (rawTime === '' || !/^\d+$/u.test(rawTime) || !Number.isSafeInteger(Number(rawTime))) throw new Error(`CSV row ${number} timestamp must be a nonnegative safe integer in milliseconds.`);
     return { key, timeMs: Number(rawTime) };
   });
   return validateAccesses(accesses);
