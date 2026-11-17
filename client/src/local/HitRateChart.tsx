@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import type { ReplayRow } from './replay';
 
 const POLICIES = ['LRU', 'LFU', 'TTL'] as const;
@@ -6,8 +7,18 @@ const STYLE = {
   LFU: { color: 'var(--ink)', dash: '9 5', marker: 'square' },
   TTL: { color: 'var(--warn)', dash: '2 5', marker: 'diamond' },
 } as const;
-const W = 640, H = 300, LEFT = 60, RIGHT = 20, TOP = 20, BOTTOM = 56;
-const PLOT_W = W - LEFT - RIGHT, PLOT_H = H - TOP - BOTTOM;
+const NARROW = '(max-width: 480px)';
+const RIGHT = 20, TOP = 20, BOTTOM = 56;
+
+// A narrower drawing on phones keeps the labels near their normal size instead of shrinking the whole chart.
+function useNarrow(): boolean {
+  const query = () => (typeof window.matchMedia === 'function' ? window.matchMedia(NARROW) : null);
+  return useSyncExternalStore(
+    (notify) => { const list = query(); list?.addEventListener('change', notify); return () => list?.removeEventListener('change', notify); },
+    () => query()?.matches ?? false,
+    () => false,
+  );
+}
 
 function Marker({ kind, x, y, color }: { kind: string; x: number; y: number; color: string }) {
   if (kind === 'square') return <rect x={x - 5} y={y - 5} width="10" height="10" fill={color} />;
@@ -17,9 +28,12 @@ function Marker({ kind, x, y, color }: { kind: string; x: number; y: number; col
 
 /** Hit rate against capacity for each policy. Sizes are evenly spaced; the table below holds the exact numbers. */
 export function HitRateChart({ rows, sizes, target }: { rows: ReplayRow[]; sizes: number[]; target: number }) {
+  const narrow = useNarrow();
+  const W = narrow ? 360 : 640, H = narrow ? 320 : 300, LEFT = narrow ? 46 : 60;
+  const PLOT_W = W - LEFT - RIGHT, PLOT_H = H - TOP - BOTTOM;
   const x = (i: number) => LEFT + (sizes.length === 1 ? PLOT_W / 2 : (i / (sizes.length - 1)) * PLOT_W);
   const y = (rate: number) => TOP + (1 - rate) * PLOT_H;
-  const labelStep = Math.ceil(sizes.length / 7);
+  const labelStep = Math.ceil(sizes.length / (narrow ? 4 : 7));
   return (
     <figure className="local-figure">
       <ul className="local-legend" aria-label="Chart key">
@@ -33,7 +47,7 @@ export function HitRateChart({ rows, sizes, target }: { rows: ReplayRow[]; sizes
           </li>
         ))}
       </ul>
-      <svg className="local-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hit rate for each policy at each tested cache size. The table below lists the exact values.">
+      <svg className="local-chart" data-narrow={narrow || undefined} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Hit rate for each policy at each tested cache size. The table below lists the exact values.">
         {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
           <g key={tick}>
             <line x1={LEFT} x2={W - RIGHT} y1={y(tick)} y2={y(tick)} className="local-grid-line" />
@@ -52,9 +66,9 @@ export function HitRateChart({ rows, sizes, target }: { rows: ReplayRow[]; sizes
           );
         })}
         {sizes.map((size, i) => (sizes.length - 1 - i) % labelStep === 0 && <text key={size} x={x(i)} y={H - 30} textAnchor="middle">{size}</text>)}
-        <text x={LEFT + PLOT_W / 2} y={H - 6} textAnchor="middle">Cache size in keys, evenly spaced</text>
+        <text x={LEFT + PLOT_W / 2} y={H - 6} textAnchor="middle">{narrow ? 'Cache size in keys' : 'Cache size in keys, evenly spaced'}</text>
       </svg>
-      <figcaption>Thin line: your target hit rate.</figcaption>
+      <figcaption>Sizes are evenly spaced. The thin line marks your target hit rate.</figcaption>
     </figure>
   );
 }
