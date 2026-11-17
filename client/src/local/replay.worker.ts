@@ -1,6 +1,6 @@
-import { parseAccessLog, parseWorkspace, replay, type Workspace } from './replay';
+import { parseAccessLog, parseWorkspace, replay, type LogFormat, type Workspace } from './replay';
 
-type Request = { workspace: Workspace } | { file: File; format: 'csv' | 'lines' | 'backup' };
+type Request = { workspace: Workspace } | { file: File; format: LogFormat | 'backup' };
 const workerScope = self as unknown as {
   onmessage: ((event: MessageEvent<Request>) => void) | null;
   postMessage(value: unknown): void;

@@ -1,4 +1,4 @@
-import { parseAccessLog, parseWorkspace, type Access, type ReplayReport, type Workspace } from './replay';
+import { parseAccessLog, parseWorkspace, type Access, type LogFormat, type ReplayReport, type Workspace } from './replay';
 
 export const MAX_FILE_BYTES = 16 * 1024 * 1024;
 const WORKER_THRESHOLD_BYTES = 256 * 1024;
@@ -34,7 +34,7 @@ export async function runReplay(workspace: Workspace): Promise<ReplayReport> {
   return workerRequest<ReplayReport>({ workspace: safeWorkspace });
 }
 
-export async function importLog(file: File, format: 'csv' | 'lines' | 'backup'): Promise<Workspace | Access[]> {
+export async function importLog(file: File, format: LogFormat | 'backup'): Promise<Workspace | Access[]> {
   if (file.size > MAX_FILE_BYTES) throw new Error(`${file.name}: file exceeds 16 MiB.`);
   try {
     if (file.size <= WORKER_THRESHOLD_BYTES) {

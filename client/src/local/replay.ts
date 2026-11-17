@@ -5,7 +5,8 @@ export type ReplayRow = {
   policy: 'LRU' | 'LFU' | 'TTL'; capacity: number; hits: number; misses: number;
   evictions: number; expirations: number; hitRate: number;
 };
-export type ReplayReport = { rows: ReplayRow[]; recommendation: ReplayRow | null };
+// doubled is the recommended policy replayed at twice the recommended capacity, which need not be a tested size.
+export type ReplayReport = { rows: ReplayRow[]; recommendation: ReplayRow | null; doubled?: ReplayRow | null };
 
 const MAX_INPUT_BYTES = 16 * 1024 * 1024;
 const MAX_ACCESSES = 100_000;
@@ -105,8 +106,58 @@ function parseCsvRows(input: string): string[][] {
   return rows;
 }
 
-export function parseAccessLog(input: string, format: 'csv' | 'lines'): Access[] {
+export type LogFormat = 'csv' | 'lines' | 'monitor';
+
+const MONITOR_READ_COMMANDS = new Set(['get', 'mget', 'hget', 'hgetall', 'exists']);
+const MONITOR_LINE = /^(\d+)(?:\.(\d+))?\s+\[[^\]]*\]\s+(.*)$/u;
+const MONITOR_ESCAPES: Record<string, number> = { n: 10, r: 13, t: 9, a: 7, b: 8 };
+
+// Reads one double-quoted argument as MONITOR prints it (backslash escapes and \xNN bytes).
+// Returns the decoded text and the rest of the line, or null when the argument is missing or unterminated.
+function readMonitorArgument(text: string): { value: string; rest: string } | null {
+  const start = text.trimStart();
+  if (!start.startsWith('"')) return null;
+  const bytes: number[] = [];
+  const encoder = new TextEncoder();
+  let i = 1;
+  while (i < start.length) {
+    const c = start[i];
+    if (c === '"') return { value: new TextDecoder().decode(new Uint8Array(bytes)), rest: start.slice(i + 1) };
+    if (c === '\\' && i + 1 < start.length) {
+      const next = start[i + 1];
+      const hex = next === 'x' ? start.slice(i + 2, i + 4) : '';
+      if (/^[0-9a-fA-F]{2}$/u.test(hex)) { bytes.push(parseInt(hex, 16)); i += 4; }
+      else if (next in MONITOR_ESCAPES) { bytes.push(MONITOR_ESCAPES[next]); i += 2; }
+      else { bytes.push(...encoder.encode(next)); i += 2; }
+    } else {
+      const point = String.fromCodePoint(start.codePointAt(i)!);
+      bytes.push(...encoder.encode(point)); i += point.length;
+    }
+  }
+  return null;
+}
+
+// Takes the first key of GET, MGET, HGET, HGETALL and EXISTS from Redis MONITOR output; every other line is ignored.
+function parseMonitor(input: string): Access[] {
+  const accesses: Access[] = [];
+  const lines = input.replace(/^﻿/u, '').split(/\r\n|\n|\r/u);
+  for (let n = 0; n < lines.length; n += 1) {
+    const match = MONITOR_LINE.exec(lines[n].trim());
+    if (!match) continue;
+    const command = readMonitorArgument(match[3]);
+    if (!command || !MONITOR_READ_COMMANDS.has(command.value.toLowerCase())) continue;
+    const key = readMonitorArgument(command.rest);
+    if (!key) throw new Error(`Redis MONITOR line ${n + 1} has a ${command.value.toUpperCase()} command with a missing or unterminated quoted key.`);
+    if (accesses.length >= MAX_ACCESSES) throw new Error('Access log must contain at most 100000 rows.');
+    accesses.push({ key: key.value, timeMs: Number(match[1]) * 1000 + Number((match[2] ?? '').padEnd(3, '0').slice(0, 3)) });
+  }
+  if (!accesses.length) throw new Error('No GET, MGET, HGET, HGETALL or EXISTS commands found. Expected MONITOR lines such as 1700000000.123456 [0 127.0.0.1:6379] "GET" "user:1".');
+  return validateAccesses(accesses);
+}
+
+export function parseAccessLog(input: string, format: LogFormat): Access[] {
   if (new TextEncoder().encode(input).byteLength > MAX_INPUT_BYTES) throw new Error('Access log exceeds 16 MiB.');
+  if (format === 'monitor') return parseMonitor(input);
   if (format === 'lines') {
     const keys = input.replace(/^\uFEFF/u, '').split(/\r\n|\n|\r/u).map((key) => key.trim()).filter(Boolean);
     if (keys.length > MAX_ACCESSES) throw new Error('Access log must contain at most 100000 rows.');
@@ -206,7 +257,38 @@ export function replay(accesses: Access[], settings: Settings): ReplayReport {
   const safeSettings = validateSettings(settings);
   const rows = safeSettings.sizes.flatMap((capacity) => (['LRU', 'LFU', 'TTL'] as const).map((policy) => simulate(safeAccesses, capacity, policy, safeSettings.ttlMs)));
   const recommendation = safeAccesses.length ? rows.filter((row) => row.hitRate >= safeSettings.targetHitRate).sort((a, b) => a.capacity - b.capacity || b.hitRate - a.hitRate)[0] ?? null : null;
-  return { rows, recommendation };
+  const doubled = recommendation ? simulate(safeAccesses, recommendation.capacity * 2, recommendation.policy, safeSettings.ttlMs) : null;
+  return { rows, recommendation, doubled };
+}
+
+const trimNumber = (value: number) => String(Number(value.toPrecision(12)));
+const percentText = (value: number) => `${(value * 100).toFixed(2)}%`;
+
+/** A target hit rate as the whole-number-friendly percent a person typed, without float noise such as 56.99999999999999. */
+export function targetPercentText(targetHitRate: number): string {
+  return trimNumber(targetHitRate * 100);
+}
+
+/** One plain sentence pair answering "how big should my cache be" for a finished replay. */
+export function describeRecommendation(report: ReplayReport, targetHitRate: number): string {
+  const target = `${targetPercentText(targetHitRate)}%`;
+  const best = report.recommendation;
+  if (!best) {
+    const top = [...report.rows].sort((a, b) => b.hitRate - a.hitRate || a.capacity - b.capacity)[0];
+    if (!top) return `No tested size reaches your ${target} target.`;
+    return `No tested size reaches your ${target} target. The best result is ${percentText(top.hitRate)} hits with ${top.policy} at ${top.capacity} keys. Try larger capacities, or check whether the log repeats keys.`;
+  }
+  const lead = `A cache of ${best.capacity} keys reaches ${percentText(best.hitRate)} hits with ${best.policy}, the smallest tested size that meets your ${target} target.`;
+  if (!report.doubled) return lead;
+  const points = (report.doubled.hitRate - best.hitRate) * 100;
+  const rounded = Math.abs(points).toFixed(1);
+  const effect = rounded === '0.0' ? 'adds nothing on this log' : points > 0 ? `adds ${rounded} points` : `lowers it by ${rounded} points`;
+  return `${lead} Doubling it to ${report.doubled.capacity} keys ${effect}.`;
+}
+
+/** True when every access sits exactly one second after the last, as when times were assigned on import. */
+export function hasAssignedTimes(accesses: Access[]): boolean {
+  return accesses.length > 0 && accesses.every((access, i) => access.timeMs === (i + 1) * 1000);
 }
 
 export function resultsCsv(report: ReplayReport): string {
