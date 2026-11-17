@@ -91,7 +91,8 @@ function precacheRequests(files) {
 
 async function networkFirst(request) {
   try {
-    return await fetch(request);
+    // 'no-cache' revalidates with the server, so a page the HTTP cache still holds is never mistaken for the latest.
+    return await fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' });
   } catch (error) {
     const cache = await caches.open(CACHE_NAME);
     const page = (await cache.match(request, { ignoreSearch: true, ignoreVary: true })) || (await cache.match(BASE + 'index.html'));

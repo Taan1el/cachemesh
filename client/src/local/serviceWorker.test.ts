@@ -17,7 +17,7 @@ function boot(version = 'v1', options: { network?: (request: Request) => Promise
   const added: Request[] = [];
   const skipWaiting = vi.fn();
   const claim = vi.fn(async () => undefined);
-  const network = vi.fn(options.network ?? (async (request: Request) => new Response(`network ${new URL(request.url).pathname}`)));
+  const network = vi.fn(options.network ?? (async (request: Request | string) => new Response(`network ${new URL(typeof request === 'string' ? request : request.url).pathname}`)));
   const cacheFor = (name: string) => {
     if (!stores.has(name)) stores.set(name, new Map());
     const store = stores.get(name)!;
@@ -72,6 +72,13 @@ describe('generated service worker', () => {
     expect(await offline.respond(BASE, { mode: 'navigate' })).toBe(`cached ${BASE}`); expect(await offline.respond(`${BASE}?tab=2`, { mode: 'navigate' })).toBe(`cached ${BASE}`);
     expect(await offline.respond(`${BASE}other`, { mode: 'navigate' })).toBe(`cached ${BASE}index.html`);
     const empty = boot('v1', { network: async () => { throw new TypeError('offline'); } }); await expect(empty.respond(BASE, { mode: 'navigate' })).rejects.toThrow('offline');
+  });
+
+  it('revalidates the page with the server so a copy in the HTTP cache is never served as current', async () => {
+    const { respond, network } = boot('v1', { stored: { [`${CACHE}v1`]: [`${BASE}index.html`] } });
+    await respond(BASE, { mode: 'navigate' });
+    expect(network).toHaveBeenCalledTimes(1);
+    expect(network.mock.calls[0][1]).toMatchObject({ cache: 'no-cache' });
   });
 
   it('serves built files from the cache without touching the network', async () => {
