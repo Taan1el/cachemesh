@@ -217,20 +217,12 @@ MIT, see [LICENSE](LICENSE).
 
 ## Use it with your own data
 
-Choose **Your workspace** on the published site, then **Import file**. This mode is an offline access-log analyzer, not a running cache gateway. Sample data and the existing gateway workbench remain separate; resetting the sample does not touch your saved log.
+On the published site choose **Your workspace**, then **Import file**. You can import a CSV with a `key` column and an optional `timestamp` column in milliseconds, a text file with one key per line, or the output of the Redis `MONITOR` command (the key is taken from `GET`, `MGET`, `HGET`, `HGETALL` and `EXISTS` lines, the first key for `MGET` and `EXISTS`, and other commands are ignored). The limits are 16 MiB and 100000 accesses, and a file with no timestamps gets times one second apart.
 
-Import a CSV with a `key` column and an optional `timestamp` column, or a text file containing one key per line. Timestamps are nonnegative integer milliseconds in nondecreasing order. Without timestamps, requests are assigned times one second apart. Input limits are 16 MiB and 100000 accesses. Keys are case-sensitive. The import dialog reports invalid files without replacing saved data. After validation, review the old and new access counts and explicitly confirm replacement. CSV keys preserve whitespace; line input trims keys and skips blank lines.
+You get the hit rate of LRU, LFU and fixed-TTL caches at up to 12 capacities you choose, shown as a chart and a table, with a sentence such as "A cache of 64 keys reaches 83.20% hits with LRU" and what doubling that size would add. LRU evicts the least recently used key, LFU evicts the least used key and breaks ties by recency, and TTL expires a key a fixed time after it was added and evicts the oldest added key when full.
 
-Set up to 12 capacities (key counts, not bytes), a fixed TTL in milliseconds, and a target hit rate. Every run starts empty:
+Everything stays on your machine: the log and settings are saved in this browser's IndexedDB without encryption, the published build makes no requests to other hosts, and after one online visit it reloads and imports files offline. When a new version is available a notice offers a Reload button and nothing reloads on its own.
 
-- LRU evicts the least recently accessed resident key.
-- LFU counts accesses since insertion, breaking equal-frequency ties by recency.
-- TTL expires entries at insertion time plus the configured TTL; hits do not extend it. Expiry occurs at the boundary. When full, this policy evicts the oldest inserted resident key. LRU and LFU have no time expiry.
+This is not a running cache: it replays one log through an initially empty cache, counts keys rather than bytes, and does not model object sizes, concurrency, origin latency or changing traffic, so treat the recommendation as an estimate for that log.
 
-The chart and table compare observed hit rates. The recommendation is the smallest tested capacity that meets your target, preferring the highest hit rate at that size. It is an estimate for this log, not a production sizing guarantee; object sizes, concurrency, origin latency, and changing traffic are not modeled.
-
-Export **Workspace JSON** to retain the log and settings, or **Results CSV** for the comparison table. A JSON backup can be imported in another browser. Large imports and replay computation use a worker. Data is saved in IndexedDB in this browser, without encryption. A stale tab cannot silently overwrite a newer saved revision; reload the saved workspace before retrying.
-
-The published build makes no requests to other hosts. It uses self-hosted fonts, a Pages-only Content Security Policy, an install manifest, and a versioned service-worker cache. A waiting update shows a Reload notice; activation is explicit so an update does not discard unsaved input. After the first successful online load, the working analyzer can reload and import files offline. The development/server build keeps its normal API behavior.
-
-Export a backup before clearing browser data or switching devices. Browser storage is not a backup, and the analyzer cannot recover a cleared workspace.
+Export **Workspace JSON** or **Results CSV** before clearing browser data, because the browser copy is not a backup. Importing replaces the saved log after you confirm, and a stale tab cannot overwrite a newer saved version.

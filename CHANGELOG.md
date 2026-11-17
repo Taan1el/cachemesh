@@ -4,6 +4,22 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-11-17
+
+### Added
+- A local "Your workspace" mode on the published site. Import an access log, replay it through LRU, LFU and fixed-TTL caches at up to 12 sizes, and see hit rates in a chart and a table. Everything runs in your browser.
+- A plain recommendation such as "A cache of 64 keys reaches 83.20% hits with LRU", with the points that doubling the size would add, or the best result when no size reaches your target.
+- Import from CSV, one key per line, Redis `MONITOR` output (keys from `GET`, `MGET`, `HGET`, `HGETALL` and `EXISTS`) or a workspace backup, with limits of 16 MiB and 100000 accesses.
+- Export of the workspace as JSON and of the results as CSV.
+- Saving of the workspace in the browser, an install manifest and offline use after the first visit, with a notice and a Reload button when a new version is ready.
+
+### Fixed
+- A saved workspace that cannot be read can now be replaced by importing a file; the Import button used to stay disabled.
+- The target hit rate field no longer shows values such as 56.99999999999999 or drifts when saved again.
+- A CSV error now names the right row when blank lines come before it, and capitalised headers and spaces around timestamps are accepted.
+- The offline page now revalidates the app page with the server before using its cached copy, so an update is not hidden behind the browser cache.
+- The distinct key count is no longer recomputed on every keystroke.
+
 ## [Unreleased]
 
 ### Added
